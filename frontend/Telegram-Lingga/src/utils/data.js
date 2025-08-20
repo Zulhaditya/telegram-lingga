@@ -17,25 +17,25 @@ export const SIDE_MENU_DATA = [
     id: "02",
     label: "Manajemen Telegram",
     icon: LuClipboardCheck,
-    path: "/admin/telegrams",
+    path: "/admin/telegram",
   },
   {
     id: "03",
     label: "Buat Telegram",
     icon: LuSquarePlus,
-    path: "/admin/create-telegrams",
+    path: "/admin/create-telegram",
   },
   {
     id: "04",
     label: "Instansi",
     icon: LuUsers,
-    path: "/admin/create-telegrams",
+    path: "/admin/users",
   },
   {
     id: "05",
     label: "Logout",
     icon: LuLogOut,
-    path: "/admin/create-telegrams",
+    path: "/admin/logout",
   },
 ];
 
