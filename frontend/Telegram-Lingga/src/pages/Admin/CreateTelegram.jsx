@@ -8,6 +8,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import moment from "moment";
 import { LuTrash2 } from "react-icons/lu";
 import SelectDropdown from "../../components/Inputs/SelectDropdown"
+import SelectUsers from "../../components/Inputs/SelectUsers"
 
 const CreateTelegram = () => {
   
@@ -105,14 +106,13 @@ const CreateTelegram = () => {
 
               </label>
               
-              <input 
-                placeholder="Diskominfo"
-                className="form-input"
-                value={telegramData.instansiPenerima}
-                onChange={({ target }) => 
-                  handleValueChange("instansiPenerima", target.value)
-                }
+              <SelectUsers 
+                selectedUsers={telegramData.instansiPenerima}
+                setSelectedUsers={(value) => {
+                  handleValueChange("instansiPenerima", value);
+                }}
               />
+              
             </div>
 
             <div className="mt-4">
@@ -147,6 +147,20 @@ const CreateTelegram = () => {
                 />
               </div>
 
+            <div className="col-span-6 md:col-span-4">
+              <label className="text-xs font-medium text-slate-600">
+                Tanggal
+              </label>
+              
+              <input 
+                placeholder=""
+                className="form-input"
+                value={telegramData.tanggal}
+                onChange={({ target }) =>
+                  handleValueChange("tanggal", target.value)}
+                type="date"
+              />
+            </div>
 
             </div>
           </div>
