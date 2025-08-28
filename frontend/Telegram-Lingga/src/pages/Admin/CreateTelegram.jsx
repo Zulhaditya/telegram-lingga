@@ -53,12 +53,71 @@ const CreateTelegram = () => {
   };
 
   // Buat telegram
-  const createTelegram = async () => {};
+  const createTelegram = async () => {
+    setLoading(true);
+
+    try {
+      const todolist = telegramData.todoChecklist?.map((item) => ({
+        text: item,
+        completed: false,
+      }));
+
+      const response = await axiosInstance.post(API_PATHS.TELEGRAMS.CREATE_TELEGRAM, {
+        ...telegramData,
+        tanggal: new Date(telegramData.tanggal).toISOString(),
+        todoChecklist: todolist,
+      });
+
+      toast.success("Telegram berhasil dibuat!");
+
+      clearData();
+    } catch (error) {
+      console.error("Error saat membuat telegram:", error);
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Update telegram
   const updateTelegram = async () => {};
   
-  const handleSubmit = async () => {};
+  const handleSubmit = async () => {
+    setError(null);
+
+    // Input validation
+    if (!telegramData.instansiPengirim.trim()) {
+      setError("Instansi pengirim belum diisi.");
+      return;
+    }
+
+    if (!telegramData.perihal.trim()) {
+      setError("Deskripsi wajib diisi.");
+      return;
+    }
+
+    if (!telegramData.tanggal) {
+      setError("Tanggal wajib diisi.");
+      return;
+    }
+
+    if (telegramData.instansiPenerima?.length === 0) {
+      setError("Tidak ada instansi yang menerima.");
+      return;
+    }
+
+    if (telegramData.todoChecklist?.length === 0) {
+      setError("Tambahkan setidaknya satu keterangan.");
+      return;
+    }
+
+    if (telegramId) {
+      updateTelegram();
+      return;
+    }
+
+    createTelegram();    
+  };
 
   // Dapatkan telegram info berdasarkan id
   const getTelegramDetailsById = async () => {};
@@ -101,21 +160,7 @@ const CreateTelegram = () => {
                 }
               />
             </div>
-            
-            <div className="mt-4">
-              <label className="text-xs font-medium text-slate-600">
-                Instansi Penerima
 
-              </label>
-              
-              <SelectUsers 
-                selectedUsers={telegramData.instansiPenerima}
-                setSelectedUsers={(value) => {
-                  handleValueChange("instansiPenerima", value);
-                }}
-              />
-              
-            </div>
 
             <div className="mt-4">
               <label className="text-xs font-medium text-slate-600">
@@ -134,6 +179,8 @@ const CreateTelegram = () => {
 
               </textarea>
             </div>
+            
+
 
             <div className="grid grid-cols-12 gap-4 mt-2">
               <div className="col-span-6 md:col-span-4">
@@ -164,6 +211,22 @@ const CreateTelegram = () => {
               />
             </div>
 
+
+            <div className="col-span-6 md:col-span-4">
+              <label className="text-xs font-medium text-slate-600">
+                Instansi Penerima
+
+              </label>
+              
+              <SelectUsers 
+                selectedUsers={telegramData.instansiPenerima}
+                setSelectedUsers={(value) => {
+                  handleValueChange("instansiPenerima", value);
+                }}
+              />
+              
+            </div>
+
             </div>
 
             <div className="mt-3">
@@ -191,6 +254,20 @@ const CreateTelegram = () => {
                   handleValueChange("attachments", value)
                 }
               />
+            </div>
+
+            {error && (
+              <p className="text-xs font-medium text-red-500 mt-5">{error}</p>
+            )}
+
+            <div className="flex justify-end mt-7">
+              <button 
+                className="add-btn"
+                onClick={handleSubmit}
+                disabled={loading}
+              >
+                {telegramId ? "UPDATE TELEGRAM" : "BUAT TELEGRAM"}
+              </button>
             </div>
             
           </div>
