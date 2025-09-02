@@ -22,7 +22,7 @@ import PrivateRoute from "./routes/PrivateRoute";
 import UserProvider, { UserContext } from "./context/userContext";
 import { useContext } from "react";
 
-import {Toaster} from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 
 const App = () => {
   return (
@@ -60,7 +60,7 @@ const App = () => {
         </Router>
       </div>
 
-      <Toaster 
+      <Toaster
         toastOptions={{
           className: "",
           style: {
