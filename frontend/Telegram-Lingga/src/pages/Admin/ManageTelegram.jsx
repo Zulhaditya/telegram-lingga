@@ -6,6 +6,7 @@ import { API_PATHS } from '../../utils/apiPaths';
 import { LuFileSpreadsheet } from 'react-icons/lu';
 import TelegramStatusTab from '../../components/TelegramStatusTab';
 import TelegramCard from '../../components/Cards/TelegramCard';
+import toast from 'react-hot-toast';
 
 const ManageTelegram = () => {
   const [allTelegrams, setAllTelegrams] = useState([]);
@@ -43,10 +44,28 @@ const ManageTelegram = () => {
     navigate(`/admin/create-telegram`, { state: { telegramId: telegramData._id } });
   };
 
-  // Download laporan telegram
-  const handleDownloadReport = async () => {
 
-  };
+  // Download data telegram
+  const handleDownloadReport = async () => {
+    try {
+      const response = await axiosInstance.get(API_PATHS.REPORTS.EXPORT_TELEGRAM, {
+        responseType: "blob",
+      });
+
+      // Buat url untuk blob
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "data_telegram.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error saat download laporan telegram:", error);
+      toast.error("Gagal saat download laporan telegram. Silahkan coba lagi");
+    }
+  }
 
   useEffect(() => {
     getAllTelegrams(filterStatus);
