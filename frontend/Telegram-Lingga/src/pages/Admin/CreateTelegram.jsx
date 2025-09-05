@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import { useEffect, useState } from 'react';
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { PRIORITY_DATA } from "../../utils/data";
 import axiosInstance from "../../utils/axiosInstance";
@@ -11,9 +11,11 @@ import SelectDropdown from "../../components/Inputs/SelectDropdown";
 import SelectUsers from "../../components/Inputs/SelectUsers";
 import TodoListInput from "../../components/Inputs/TodoListInput";
 import AddAttachmentsInput from "../../components/Inputs/AddAttachmentsInput";
+import DeleteAlert from '../../components/DeleteAlert';
+import Modal from '../../components/Modal';
 
 const CreateTelegram = () => {
-  
+
   const location = useLocation();
   const { telegramId } = location.state || {};
   const navigate = useNavigate();
@@ -28,17 +30,17 @@ const CreateTelegram = () => {
   });
 
   const [currentTelegram, setCurrrentTelegram] = useState(null);
-  
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  
+
   const [openDeleteAlert, setOpenDeleteAlert] = useState(false);
-  
+
   const handleValueChange = (key, value) => {
-    setTelegramData((prevData) => ({...prevData, [key]: value }));
+    setTelegramData((prevData) => ({ ...prevData, [key]: value }));
   };
 
-  
+
   const clearData = () => {
     // Reset form
     setTelegramData({
@@ -80,8 +82,39 @@ const CreateTelegram = () => {
   };
 
   // Update telegram
-  const updateTelegram = async () => {};
-  
+  const updateTelegram = async () => {
+    setLoading(true);
+
+    try {
+      const todolist = telegramData.todoChecklist?.map((item) => {
+        const prevTodoChecklist = currentTelegram?.todoChecklist || [];
+        const matchedTelegram = prevTodoChecklist.find((telegram) => telegram.text == item);
+
+        return {
+          text: item,
+          completed: matchedTelegram ? matchedTelegram.completed : false,
+        };
+      });
+
+      const response = await axiosInstance.put(
+        API_PATHS.TELEGRAMS.UPDATE_TELEGRAM(telegramId),
+        {
+          ...telegramData,
+          tanggal: new Date(telegramData.tanggal).toISOString(),
+          todoChecklist: todolist,
+        }
+      );
+
+      toast.success("Telegram berhasil diupdate!");
+
+    } catch (eror) {
+      console.error("Error saat update telegram:", error);
+      setLoading(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     setError(null);
 
@@ -116,15 +149,56 @@ const CreateTelegram = () => {
       return;
     }
 
-    createTelegram();    
+    createTelegram();
   };
 
   // Dapatkan telegram info berdasarkan id
-  const getTelegramDetailsById = async () => {};
+  const getTelegramDetailsById = async () => {
+    try {
+      const response = await axiosInstance.get(
+        API_PATHS.TELEGRAMS.GET_TELEGRAM_BY_ID(telegramId)
+      );
+
+      if (response.data) {
+        const telegramInfo = response.data;
+        setCurrrentTelegram(telegramInfo);
+
+        setTelegramData((prevState) => ({
+          instansiPengirim: telegramInfo.instansiPengirim,
+          instansiPenerima: telegramInfo?.instansiPenerima?.map((item) => item?._id) || [],
+          perihal: telegramInfo.perihal,
+          klasifikasi: telegramInfo.klasifikasi,
+          tanggal: telegramInfo.tanggal ? moment(telegramInfo.tanggal).format("YYYY-MM-DD") : null,
+          todoChecklist:
+            telegramInfo?.todoChecklist?.map((item) => item?.text) || [],
+          attachments: telegramInfo?.attachments || [],
+        }));
+      }
+    } catch (error) {
+      console.error("Error saat fetching data instansi:", error);
+    }
+  };
 
   // Hapus telegram
-  const deleteTelegram = async () => {};
-  
+  const deleteTelegram = async () => {
+    try {
+      await axiosInstance.delete(API_PATHS.TELEGRAMS.DELETE_TELEGRAM(telegramId));
+
+      setOpenDeleteAlert(false);
+      toast.success("Berhasil menghapus telegram!");
+      navigate('/admin/telegram');
+    } catch (error) {
+      console.error("Error saat hapus telegram:", error.response?.data?.message || error.message);
+    }
+  };
+
+  useEffect(() => {
+    if (telegramId) {
+      getTelegramDetailsById(telegramId)
+    }
+
+    return () => { }
+  }, [telegramId]);
 
   return (
     <DashboardLayout activeMenu="Buat Telegram">
@@ -135,7 +209,7 @@ const CreateTelegram = () => {
               <h2 className="text-xl md:text-xl font-medium">
                 {telegramId ? "Update Telegram" : "Buat Telegram"}
               </h2>
-              
+
               {telegramId && (
                 <button
                   className="flex items-center gap-1.5 text-[13px] font-medium text-rose-500 bg-rose-50 rounded px-2 py-1 border border-rose-100 hover:border-rose-300 cursor-pointer"
@@ -145,17 +219,17 @@ const CreateTelegram = () => {
                 </button>
               )}
             </div>
-            
+
             <div className="mt-4">
               <label className="text-xs font-medium text-slate-600">
                 Instansi Pengirim
               </label>
-              
-              <input 
+
+              <input
                 placeholder="Kemendagri"
                 className="form-input"
                 value={telegramData.instansiPengirim}
-                onChange={({ target }) => 
+                onChange={({ target }) =>
                   handleValueChange("instansiPengirim", target.value)
                 }
               />
@@ -172,14 +246,14 @@ const CreateTelegram = () => {
                 className="form-input"
                 rows={4}
                 value={telegramData.perihal}
-                onChange={({ target }) => 
+                onChange={({ target }) =>
                   handleValueChange("perihal", target.value)
                 }
               >
 
               </textarea>
             </div>
-            
+
 
 
             <div className="grid grid-cols-12 gap-4 mt-2">
@@ -196,36 +270,36 @@ const CreateTelegram = () => {
                 />
               </div>
 
-            <div className="col-span-6 md:col-span-4">
-              <label className="text-xs font-medium text-slate-600">
-                Tanggal
-              </label>
-              
-              <input 
-                placeholder=""
-                className="form-input"
-                value={telegramData.tanggal}
-                onChange={({ target }) =>
-                  handleValueChange("tanggal", target.value)}
-                type="date"
-              />
-            </div>
+              <div className="col-span-6 md:col-span-4">
+                <label className="text-xs font-medium text-slate-600">
+                  Tanggal
+                </label>
+
+                <input
+                  placeholder=""
+                  className="form-input"
+                  value={telegramData.tanggal}
+                  onChange={({ target }) =>
+                    handleValueChange("tanggal", target.value)}
+                  type="date"
+                />
+              </div>
 
 
-            <div className="col-span-6 md:col-span-4">
-              <label className="text-xs font-medium text-slate-600">
-                Instansi Penerima
+              <div className="col-span-6 md:col-span-4">
+                <label className="text-xs font-medium text-slate-600">
+                  Instansi Penerima
 
-              </label>
-              
-              <SelectUsers 
-                selectedUsers={telegramData.instansiPenerima}
-                setSelectedUsers={(value) => {
-                  handleValueChange("instansiPenerima", value);
-                }}
-              />
-              
-            </div>
+                </label>
+
+                <SelectUsers
+                  selectedUsers={telegramData.instansiPenerima}
+                  setSelectedUsers={(value) => {
+                    handleValueChange("instansiPenerima", value);
+                  }}
+                />
+
+              </div>
 
             </div>
 
@@ -233,24 +307,24 @@ const CreateTelegram = () => {
               <label className="text-xs font-medium text-slate-600">
                 Ceklist
               </label>
-              
 
-              <TodoListInput 
+
+              <TodoListInput
                 todoList={telegramData?.todoChecklist}
-                setTodoList={(value) => 
+                setTodoList={(value) =>
                   handleValueChange("todoChecklist", value)
                 }
               />
             </div>
-            
+
             <div className="mt-3">
               <label className="text-xs font-medium text-slate-600">
                 Tambahkan dokumen
               </label>
-              
-              <AddAttachmentsInput 
+
+              <AddAttachmentsInput
                 attachments={telegramData?.attachments}
-                setAttachments={(value) => 
+                setAttachments={(value) =>
                   handleValueChange("attachments", value)
                 }
               />
@@ -261,7 +335,7 @@ const CreateTelegram = () => {
             )}
 
             <div className="flex justify-end mt-7">
-              <button 
+              <button
                 className="add-btn"
                 onClick={handleSubmit}
                 disabled={loading}
@@ -269,10 +343,22 @@ const CreateTelegram = () => {
                 {telegramId ? "UPDATE TELEGRAM" : "BUAT TELEGRAM"}
               </button>
             </div>
-            
+
           </div>
         </div>
       </div>
+
+      <Modal
+        isOpen={openDeleteAlert}
+        onClose={() => setOpenDeleteAlert(false)}
+        title="Hapus Telegram"
+      >
+        <DeleteAlert
+          content="Apakah anda yakin untuk menghapus telegram ini?"
+          onDelete={() => deleteTelegram()}
+        />
+
+      </Modal>
     </DashboardLayout>
   )
 }
