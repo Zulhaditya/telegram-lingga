@@ -50,13 +50,13 @@ export const SIDE_MENU_USER_DATA = [
     id: "02",
     label: "Telegram Instansi",
     icon: LuClipboardCheck,
-    path: "/user/dashboard",
+    path: "/user/telegram",
   },
   {
     id: "03",
     label: "Logout",
     icon: LuClipboardCheck,
-    path: "/user/dashboard",
+    path: "/user/logout",
   },
 ];
 

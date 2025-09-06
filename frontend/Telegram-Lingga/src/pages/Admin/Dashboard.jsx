@@ -71,13 +71,13 @@ const Dashboard = () => {
   };
 
   const onSeeMore = () => {
-    navigate("/admin/telegrams");
+    navigate("/admin/telegram");
   };
 
   useEffect(() => {
     getDashboardData();
 
-    return () => {};
+    return () => { };
   }, []);
 
   return (

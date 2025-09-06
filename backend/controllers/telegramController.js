@@ -393,7 +393,7 @@ const getUserDashboardData = async (req, res) => {
 
     const telegramKlasifikasiLevelsRaw = await Telegram.aggregate([
       { $match: { instansiPenerima: userId } },
-      { $group: { _id: "$priority", count: { $sum: 1 } } },
+      { $group: { _id: "$klasifikasi", count: { $sum: 1 } } },
     ]);
 
     const telegramKlasifikasiLevels = telegramKlasifikasi.reduce(
