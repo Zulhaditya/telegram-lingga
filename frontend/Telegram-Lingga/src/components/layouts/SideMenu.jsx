@@ -18,10 +18,12 @@ const SideMenu = ({ activeMenu }) => {
     navigate(route);
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
+  const handleLogout = async () => {
     clearUser();
-    navigate("/login");
+    // Gunakan setTimeout untuk memastikan state terupdate sebelum navigate
+    setTimeout(() => {
+      navigate("/login");
+    }, 100);
   };
 
   useEffect(() => {
