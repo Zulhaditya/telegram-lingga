@@ -1,5 +1,8 @@
 const Telegram = require("../models/Telegram");
 
+const fs = require("fs");
+const path = require("path");
+
 // @desc    Dapatkan semua data telegram (Admin: semua, User: hanya yang diterima)
 // @route   GET /api/telegrams/
 // @access  Private
@@ -89,15 +92,18 @@ const getTelegramById = async (req, res) => {
 // @route   POST /api/telegrams/
 // @access  Private (Admin)
 const createTelegram = async (req, res) => {
+  let instansiPenerima = [];
   try {
+    instansiPenerima = JSON.parse(req.body.instansiPenerima);
+
     const {
       instansiPengirim,
       perihal,
       klasifikasi,
       status,
       tanggal,
-      instansiPenerima,
-      attachments,
+      // instansiPenerima,
+      // attachments,
       todoChecklist,
       progress,
     } = req.body;
@@ -106,6 +112,16 @@ const createTelegram = async (req, res) => {
       return res
         .status(400)
         .json({ message: "Instansi penerima harus berupa array dari user ID" });
+    }
+
+    let attachments = [];
+
+    // ✅ Jika ada PDF
+    if (req.file) {
+      attachments.push({
+        fileName: req.file.originalname,
+        fileUrl: `/uploads/telegram/${req.file.filename}`,
+      });
     }
 
     const telegram = await Telegram.create({
@@ -133,31 +149,81 @@ const updateTelegram = async (req, res) => {
   try {
     const telegram = await Telegram.findById(req.params.id);
 
-    if (!telegram)
+    if (!telegram) {
       return res.status(404).json({ message: "Telegram tidak ditemukan" });
-
-    telegram.instansiPengirim =
-      req.body.instansiPengirim || telegram.instansiPengirim;
-    telegram.perihal = req.body.perihal || telegram.perihal;
-    telegram.klasifikasi = req.body.klasifikasi || telegram.klasifikasi;
-    telegram.status = req.body.status || telegram.status;
-    telegram.tanggal = req.body.tanggal || telegram.tanggal;
-    telegram.todoChecklist = req.body.todoChecklist || telegram.todoChecklist;
-    telegram.attachments = req.body.attachments || telegram.attachments;
-
-    if (req.body.instansiPenerima) {
-      if (!Array.isArray(req.body.instansiPenerima)) {
-        return res.status(400).json({
-          message: "Instansi Penerima harus kumpulan array dari user ID",
-        });
-      }
-      telegram.instansiPenerima = req.body.instansiPenerima;
     }
 
-    const updateTelegram = await telegram.save();
-    res.json({ message: "Telegram berhasil diupdate", updateTelegram });
+    // =====================
+    // UPDATE FIELD BIASA
+    // =====================
+    telegram.instansiPengirim =
+      req.body.instansiPengirim ?? telegram.instansiPengirim;
+
+    telegram.perihal = req.body.perihal ?? telegram.perihal;
+
+    telegram.klasifikasi = req.body.klasifikasi ?? telegram.klasifikasi;
+
+    telegram.status = req.body.status ?? telegram.status;
+
+    telegram.tanggal = req.body.tanggal
+      ? new Date(req.body.tanggal)
+      : telegram.tanggal;
+
+    // =====================
+    // INSTANSI PENERIMA (ARRAY)
+    // =====================
+    if (req.body.instansiPenerima) {
+      const penerima = Array.isArray(req.body.instansiPenerima)
+        ? req.body.instansiPenerima
+        : [req.body.instansiPenerima];
+
+      telegram.instansiPenerima = penerima;
+    }
+
+    // =====================
+    // TODO CHECKLIST (JSON STRING)
+    // =====================
+    if (req.body.todoChecklist) {
+      telegram.todoChecklist = JSON.parse(req.body.todoChecklist);
+    }
+
+    // =====================
+    // PDF UPLOAD (REPLACE)
+    // =====================
+    if (req.file) {
+      if (telegram.attachments?.length > 0) {
+        const oldFilePath = path.join(
+          __dirname,
+          "..",
+          telegram.attachments[0].fileUrl
+        );
+
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      }
+
+      // 2. SIMPAN FILE BARU
+      telegram.attachments = [
+        {
+          fileName: req.file.originalname,
+          fileUrl: `/uploads/telegram/${req.file.filename}`,
+        },
+      ];
+    }
+
+    await telegram.save();
+
+    res.json({
+      message: "Telegram berhasil diupdate",
+      telegram,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("Update Telegram Error:", error);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
 };
 
@@ -324,9 +390,7 @@ const getDashboardData = async (req, res) => {
     const recentTelegrams = await Telegram.find()
       .sort({ createdAt: -1 })
       .limit(10)
-      .select(
-        "instansiPengirim perihal klasifikasi status tanggal instansiPenerima createdAt"
-      );
+      .populate("instansiPenerima", "nama email profileImageUrl");
 
     res.status(200).json({
       statistics: {

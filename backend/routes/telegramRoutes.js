@@ -11,6 +11,7 @@ const {
   updateTelegramStatus,
   updateTelegramChecklist,
 } = require("../controllers/telegramController");
+const uploadPdf = require("../middleware/uploadPDF");
 
 const router = express.Router();
 
@@ -19,8 +20,20 @@ router.get("/dashboard-data", protect, getDashboardData);
 router.get("/user-dashboard-data", protect, getUserDashboardData);
 router.get("/", protect, getTelegram); // Dapatkan semua data telegram (Admin: semua, User: yang diterima saja)
 router.get("/:id", protect, getTelegramById); // Dapatkan data telegram berdasarkan ID
-router.post("/", protect, adminOnly, createTelegram); // Buat data telegram (Hanya admin)
-router.put("/:id", protect, updateTelegram); // Update data telegram
+router.post(
+  "/",
+  protect,
+  adminOnly,
+  uploadPdf.single("attachment"),
+  createTelegram
+); // Buat data telegram (Hanya admin)
+router.put(
+  "/:id",
+  protect,
+  adminOnly,
+  uploadPdf.single("attachment"),
+  updateTelegram
+); // Update data telegram
 router.delete("/:id", protect, adminOnly, deleteTelegram); // Hapus data telegram (Hanya admin)
 router.put("/:id/status", protect, updateTelegramStatus); // Update status telegram
 router.put("/:id/todo", protect, updateTelegramChecklist); // Update checklist telegram

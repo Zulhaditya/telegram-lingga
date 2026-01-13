@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
 import { API_PATHS } from "../../utils/apiPaths";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
-import moment from 'moment';
+import moment from "moment";
 import AvatarGroup from "../../components/AvatarGroup";
-import { LuSquareArrowOutUpRight } from 'react-icons/lu';
+import { LuSquareArrowOutUpRight } from "react-icons/lu";
 
 const ViewTelegramDetails = () => {
   const { id } = useParams();
@@ -72,9 +72,8 @@ const ViewTelegramDetails = () => {
       getTelegramDetailsById();
     }
 
-    return () => { };
+    return () => {};
   }, [id]);
-
 
   return (
     <DashboardLayout activeMenu="Telegram Instansi">
@@ -106,7 +105,8 @@ const ViewTelegramDetails = () => {
                 </div>
 
                 <div className="col-span-6 md:col-span-4">
-                  <InfoBox label="Tanggal"
+                  <InfoBox
+                    label="Tanggal"
                     value={
                       telegram?.tanggal
                         ? moment(telegram?.tanggal).format("Do MMM YYYY")
@@ -122,8 +122,9 @@ const ViewTelegramDetails = () => {
 
                   <AvatarGroup
                     avatars={
-                      telegram?.instansiPenerima?.map((item) => item?.profileImageUrl) ||
-                      []
+                      telegram?.instansiPenerima?.map(
+                        (item) => item?.profileImageUrl
+                      ) || []
                     }
                     maxVisible={5}
                   />
@@ -145,67 +146,68 @@ const ViewTelegramDetails = () => {
                 ))}
               </div>
 
-              {telegram?.attachments?.length > 0 && (
-                <div className="mt-2">
-                  <label className="text-xs font-medium text-slate-500">
-                    Lampiran
-                  </label>
-
-                  {telegram?.attachments?.map((link, index) => (
-                    <Attachment
-                      key={`link_${index}`}
-                      link={link}
-                      index={index}
-                      onClick={() => handleLinkClick(link)}
-                    />
-                  ))}
-                </div>
+              {telegram.attachments?.length > 0 && (
+                <iframe
+                  src={`${import.meta.env.VITE_API_BASE_URL}${
+                    telegram.attachments[0].fileUrl
+                  }`}
+                  width="100%"
+                  height="500px"
+                  className="border rounded mt-3"
+                  title="Preview PDF"
+                />
               )}
             </div>
           </div>
         )}
       </div>
     </DashboardLayout>
-  )
-}
+  );
+};
 
 export default ViewTelegramDetails;
 
 const InfoBox = ({ label, value }) => {
-  return <>
-    <label className="text-xs font-medium text-slate-500">{label}</label>
-    <p className="text-[12px] md:text-[13px] font-medium text-gray-700 mt-0.5">
-      {value}
-    </p>
-  </>
-}
+  return (
+    <>
+      <label className="text-xs font-medium text-slate-500">{label}</label>
+      <p className="text-[12px] md:text-[13px] font-medium text-gray-700 mt-0.5">
+        {value}
+      </p>
+    </>
+  );
+};
 
 const TodoChecklist = ({ text, isChecked, onChange }) => {
-  return <div className="flex items-center gap-3 p-3">
-    <input
-      type="checkbox"
-      checked={isChecked}
-      onChange={onChange}
-      className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded-sm outline-none cursor-pointer"
-    />
+  return (
+    <div className="flex items-center gap-3 p-3">
+      <input
+        type="checkbox"
+        checked={isChecked}
+        onChange={onChange}
+        className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded-sm outline-none cursor-pointer"
+      />
 
-    <p className="text-[13px] text-gray-800">{text}</p>
-  </div>
-}
+      <p className="text-[13px] text-gray-800">{text}</p>
+    </div>
+  );
+};
 
 const Attachment = ({ link, index, onClick }) => {
-  return <div
-    className="flex justify-between bg-gray-50 border border-gray-100 px-3 py-2 rounded-md mb-3 mt-2 cursor-pointer"
-    onClick={onClick}
-  >
-    <div className="flex-1 flex items-center gap-3 border border-gray-100">
-      <span className="text-xs text-gray-400 font-semibold mr-2">
-        {index < 9 ? `0${index + 1}` : index + 1}
-      </span>
+  return (
+    <div
+      className="flex justify-between bg-gray-50 border border-gray-100 px-3 py-2 rounded-md mb-3 mt-2 cursor-pointer"
+      onClick={onClick}
+    >
+      <div className="flex-1 flex items-center gap-3 border border-gray-100">
+        <span className="text-xs text-gray-400 font-semibold mr-2">
+          {index < 9 ? `0${index + 1}` : index + 1}
+        </span>
 
-      <p className="text-xs text-black">{link}</p>
+        <p className="text-xs text-black">{link}</p>
+      </div>
+
+      <LuSquareArrowOutUpRight className="text-gray-400" />
     </div>
-
-    <LuSquareArrowOutUpRight className="text-gray-400" />
-  </div>
-}
+  );
+};

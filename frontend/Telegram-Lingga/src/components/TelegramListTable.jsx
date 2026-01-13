@@ -59,7 +59,7 @@ const TelegramListTable = ({ tableData }) => {
                 {telegram.instansiPengirim}
               </td>
               <td className="py-4 px-4 text-gray-700 text-[13px]">
-                {telegram.instansiPenerima}
+                {telegram.instansiPenerima.map((i) => i.nama).join(", ")}
               </td>
               <td className="py-4 px-4 text-gray-700 text-[13px]">
                 {telegram.perihal}
