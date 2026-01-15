@@ -109,6 +109,7 @@ const ManageTelegram = () => {
             <TelegramCard
               key={item._id}
               instansiPengirim={item.instansiPengirim}
+              nomorSurat={item.nomorSurat}
               instansiPenerima={item.instansiPenerima?.map((item) => item.profileImageUrl)}
               perihal={item.perihal}
               klasifikasi={item.klasifikasi}

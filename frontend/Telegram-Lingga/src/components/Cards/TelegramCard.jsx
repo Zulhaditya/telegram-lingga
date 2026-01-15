@@ -6,6 +6,7 @@ import moment from "moment";
 
 const TelegramCard = ({
   instansiPengirim,
+  nomorSurat,
   instansiPenerima,
   perihal,
   klasifikasi,
@@ -65,6 +66,10 @@ const TelegramCard = ({
         }`}>
         <p className="text-sm font-medium text-gray-800 mt-4 line-clamp-2">
           {instansiPengirim}
+        </p>
+
+        <p className="text-xs text-gray-600 mt-1 font-medium">
+          No. {nomorSurat}
         </p>
 
         <p className="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-[18px]">

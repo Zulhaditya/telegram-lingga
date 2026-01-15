@@ -98,6 +98,7 @@ const createTelegram = async (req, res) => {
 
     const {
       instansiPengirim,
+      nomorSurat,
       perihal,
       klasifikasi,
       status,
@@ -126,6 +127,7 @@ const createTelegram = async (req, res) => {
 
     const telegram = await Telegram.create({
       instansiPengirim,
+      nomorSurat,
       perihal,
       klasifikasi,
       status,
@@ -158,6 +160,8 @@ const updateTelegram = async (req, res) => {
     // =====================
     telegram.instansiPengirim =
       req.body.instansiPengirim ?? telegram.instansiPengirim;
+
+    telegram.nomorSurat = req.body.nomorSurat ?? telegram.nomorSurat;
 
     telegram.perihal = req.body.perihal ?? telegram.perihal;
 

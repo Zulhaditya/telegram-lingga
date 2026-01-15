@@ -36,6 +36,12 @@ const telegramSchema = new mongoose.Schema(
       trim: true,
     },
 
+    nomorSurat: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
     perihal: {
       type: String,
       trim: true,

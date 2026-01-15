@@ -21,6 +21,7 @@ const CreateTelegram = () => {
 
   const [telegramData, setTelegramData] = useState({
     instansiPengirim: "",
+    nomorSurat: "",
     instansiPenerima: [],
     perihal: "",
     klasifikasi: "BIASA",
@@ -45,6 +46,7 @@ const CreateTelegram = () => {
     // Reset form
     setTelegramData({
       instansiPengirim: "",
+      nomorSurat: "",
       instansiPenerima: [],
       perihal: "",
       klasifikasi: "",
@@ -113,6 +115,7 @@ const CreateTelegram = () => {
       const formData = new FormData();
 
       formData.append("instansiPengirim", telegramData.instansiPengirim);
+      formData.append("nomorSurat", telegramData.nomorSurat);
       formData.append("perihal", telegramData.perihal);
       formData.append("klasifikasi", telegramData.klasifikasi);
       formData.append("tanggal", new Date(telegramData.tanggal).toISOString());
@@ -190,6 +193,7 @@ const CreateTelegram = () => {
       const formData = new FormData();
 
       formData.append("instansiPengirim", telegramData.instansiPengirim);
+      formData.append("nomorSurat", telegramData.nomorSurat);
       formData.append("perihal", telegramData.perihal);
       formData.append("klasifikasi", telegramData.klasifikasi);
       formData.append("tanggal", new Date(telegramData.tanggal).toISOString());
@@ -243,6 +247,11 @@ const CreateTelegram = () => {
       return;
     }
 
+    if (!telegramData.nomorSurat.trim()) {
+      setError("Nomor surat belum diisi.");
+      return;
+    }
+
     if (!telegramData.perihal.trim()) {
       setError("Deskripsi wajib diisi.");
       return;
@@ -284,6 +293,7 @@ const CreateTelegram = () => {
 
         setTelegramData((prevState) => ({
           instansiPengirim: telegramInfo.instansiPengirim,
+          nomorSurat: telegramInfo.nomorSurat,
           instansiPenerima:
             telegramInfo?.instansiPenerima?.map((item) => item?._id) || [],
           perihal: telegramInfo.perihal,
@@ -358,6 +368,21 @@ const CreateTelegram = () => {
                 value={telegramData.instansiPengirim}
                 onChange={({ target }) =>
                   handleValueChange("instansiPengirim", target.value)
+                }
+              />
+            </div>
+
+            <div className="mt-4">
+              <label className="text-xs font-medium text-slate-600">
+                Nomor Surat
+              </label>
+
+              <input
+                placeholder="001/SET/2025"
+                className="form-input"
+                value={telegramData.nomorSurat}
+                onChange={({ target }) =>
+                  handleValueChange("nomorSurat", target.value)
                 }
               />
             </div>

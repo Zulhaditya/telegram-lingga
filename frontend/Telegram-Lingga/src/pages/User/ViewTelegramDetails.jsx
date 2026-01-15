@@ -99,6 +99,10 @@ const ViewTelegramDetails = () => {
                 <InfoBox label="Perihal" value={telegram?.perihal} />
               </div>
 
+              <div className="mt-4">
+                <InfoBox label="Nomor Surat" value={telegram?.nomorSurat} />
+              </div>
+
               <div className="grid grid-cols-12 gap-4 mt-4">
                 <div className="col-span-6 md:col-span-4">
                   <InfoBox label="Klasifikasi" value={telegram?.klasifikasi} />
