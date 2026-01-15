@@ -146,11 +146,9 @@ const ViewTelegramDetails = () => {
                 ))}
               </div>
 
-              {telegram.attachments?.length > 0 && (
+              {telegram.attachments?.length > 0 && telegram.attachments[0]?.fileUrl && (
                 <iframe
-                  src={`${import.meta.env.VITE_API_BASE_URL}${
-                    telegram.attachments[0].fileUrl
-                  }`}
+                  src={`http://localhost:8000${telegram.attachments[0].fileUrl}`}
                   width="100%"
                   height="500px"
                   className="border rounded mt-3"
