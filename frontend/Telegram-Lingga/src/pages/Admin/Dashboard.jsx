@@ -13,7 +13,7 @@ import { LuArrowRight } from "react-icons/lu";
 import CustomPieChart from "../../components/Charts/CustomPieChart";
 import CustomBarChart from "../../components/Charts/CustomBarChart";
 
-const COLORS = ["8D51FF", "#00B8DB", "#7BCE00"];
+const COLORS = ["#10B981", "#F59E0B", "#3B82F6"]; // Dibaca: Hijau, Belum Dibaca: Kuning, Semua: Biru
 
 const Dashboard = () => {
   useUserAuth();

@@ -480,9 +480,7 @@ const getUserDashboardData = async (req, res) => {
     })
       .sort({ createdAt: -1 })
       .limit(10)
-      .select(
-        "instansiPengirim perihal klasifikasi status tanggal instansiPenerima createdAt"
-      );
+      .populate("instansiPenerima", "nama email profileImageUrl");
 
     res.status(200).json({
       statistics: {

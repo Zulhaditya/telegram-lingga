@@ -13,19 +13,19 @@ import {
 const CustomBarChart = ({ data }) => {
   // Fungsi untuk generate warna
   const getBarColor = (entry) => {
-    switch (entry?.priority) {
+    switch (entry?.priority || entry?.klasifikasi) {
       case "BIASA":
-        return "#00BC7D";
+        return "#10B981"; // Hijau
       case "SEGERA":
-        return "#FE9900";
+        return "#F59E0B"; // Kuning
       case "RAHASIA":
-        return "#FF1F57";
+        return "#EF4444"; // Merah
       case "PENTING":
-        return "#00BCC7D";
+        return "#8B5CF6"; // Ungu
       case "EDARAN":
-        return "#FE9900";
+        return "#06B6D4"; // Cyan
       default:
-        return "#00BC7D";
+        return "#6B7280"; // Abu-abu
     }
   };
 
