@@ -32,10 +32,18 @@ const getTelegram = async (req, res) => {
     // Tambahkan todoChecklist ke setiap telegram
     telegrams = await Promise.all(
       telegrams.map(async (telegram) => {
-        const completedCount = telegram.todoChecklist.filter(
+        const userChecklist = telegram.todoChecklists.find(
+          (tc) => tc.userId.toString() === req.user._id.toString()
+        );
+        const checklist = userChecklist ? userChecklist.checklist : [];
+        const completedCount = checklist.filter(
           (item) => item.completed
         ).length;
-        return { ...telegram._doc, completedTodoCount: completedCount };
+        return {
+          ...telegram._doc,
+          todoChecklist: checklist, // Override dengan checklist user
+          completedTodoCount: completedCount,
+        };
       })
     );
 
@@ -74,15 +82,34 @@ const getTelegram = async (req, res) => {
 // @access  Private
 const getTelegramById = async (req, res) => {
   try {
-    const telegrams = await Telegram.findById(req.params.id).populate(
+    const telegram = await Telegram.findById(req.params.id).populate(
       "instansiPenerima",
       "nama email profileImageUrl"
     );
 
-    if (!telegrams)
+    if (!telegram)
       return res.status(404).json({ message: "Telegram tidak ditemukan" });
 
-    res.json(telegrams);
+    // Find checklist for the current user or admin
+    let checklist = [];
+    if (req.user.role === "admin") {
+      // For admin, return the first checklist as template
+      const firstChecklist = telegram.todoChecklists[0];
+      checklist = firstChecklist ? firstChecklist.checklist : [];
+    } else {
+      const userChecklist = telegram.todoChecklists.find(
+        (tc) => tc.userId.toString() === req.user._id.toString()
+      );
+      checklist = userChecklist ? userChecklist.checklist : [];
+    }
+
+    // Add todoChecklist to the response for frontend compatibility
+    const telegramWithChecklist = {
+      ...telegram._doc,
+      todoChecklist: checklist,
+    };
+
+    res.json(telegramWithChecklist);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -134,7 +161,10 @@ const createTelegram = async (req, res) => {
       tanggal,
       instansiPenerima,
       attachments,
-      todoChecklist,
+      todoChecklists: instansiPenerima.map((userId) => ({
+        userId,
+        checklist: todoChecklist || [],
+      })),
       progress,
     });
 
@@ -185,10 +215,13 @@ const updateTelegram = async (req, res) => {
     }
 
     // =====================
-    // TODO CHECKLIST (JSON STRING)
+    // TODO CHECKLIST (JSON STRING) - Update for all users
     // =====================
     if (req.body.todoChecklist) {
-      telegram.todoChecklist = JSON.parse(req.body.todoChecklist);
+      const checklist = JSON.parse(req.body.todoChecklist);
+      telegram.todoChecklists.forEach((tc) => {
+        tc.checklist = checklist;
+      });
     }
 
     // =====================
@@ -268,7 +301,20 @@ const updateTelegramStatus = async (req, res) => {
     telegram.status = req.body.status || telegram.status;
 
     if (telegram.status === "Dibaca") {
-      telegram.todoChecklist.forEach((item) => (item.completed = true));
+      if (req.user.role === "admin") {
+        // For admin, mark all checklists as completed
+        telegram.todoChecklists.forEach((tc) => {
+          tc.checklist.forEach((item) => (item.completed = true));
+        });
+      } else {
+        // Find checklist for this user and mark all as completed
+        const userChecklist = telegram.todoChecklists.find(
+          (tc) => tc.userId.toString() === req.user._id.toString()
+        );
+        if (userChecklist) {
+          userChecklist.checklist.forEach((item) => (item.completed = true));
+        }
+      }
       telegram.progress = 100;
     }
 
@@ -279,9 +325,6 @@ const updateTelegramStatus = async (req, res) => {
   }
 };
 
-// @desc    Update checklist telegram
-// @route   PUT /api/telegram/:id/todo
-// @access  Private
 const updateTelegramChecklist = async (req, res) => {
   try {
     const { todoChecklist } = req.body;
@@ -299,14 +342,37 @@ const updateTelegramChecklist = async (req, res) => {
         .json({ message: "Tidak memiliki izin untuk update checklist" });
     }
 
-    telegram.todoChecklist = todoChecklist;
+    // Find or create checklist for this user or admin
+    if (req.user.role === "admin") {
+      // For admin, update all checklists
+      telegram.todoChecklists.forEach((tc) => {
+        tc.checklist = todoChecklist;
+      });
+    } else {
+      let userChecklist = telegram.todoChecklists.find(
+        (tc) => tc.userId.toString() === req.user._id.toString()
+      );
+
+      if (!userChecklist) {
+        userChecklist = { userId: req.user._id, checklist: [] };
+        telegram.todoChecklists.push(userChecklist);
+      }
+
+      userChecklist.checklist = todoChecklist;
+    }
 
     // Auto update progres berdasarkan checklist
-    const completedCount = telegram.todoChecklist.filter(
-      (item) => item.completed
-    ).length;
-
-    const totalItems = telegram.todoChecklist.length;
+    let completedCount, totalItems;
+    if (req.user.role === "admin") {
+      // For admin, use the updated checklist
+      completedCount = todoChecklist.filter((item) => item.completed).length;
+      totalItems = todoChecklist.length;
+    } else {
+      completedCount = userChecklist.checklist.filter(
+        (item) => item.completed
+      ).length;
+      totalItems = userChecklist.checklist.length;
+    }
     telegram.progress =
       totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
 

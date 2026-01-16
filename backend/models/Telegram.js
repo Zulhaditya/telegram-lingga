@@ -5,6 +5,11 @@ const todoSchema = new mongoose.Schema({
   completed: { type: Boolean, default: false },
 });
 
+const todoChecklistSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  checklist: [todoSchema],
+});
+
 // const telegramSchema = new mongoose.Schema(
 //   {
 //     instansiPengirim: { type: String, required: true },
@@ -85,7 +90,7 @@ const telegramSchema = new mongoose.Schema(
       },
     ],
 
-    todoChecklist: [todoSchema],
+    todoChecklists: [todoChecklistSchema],
 
     progress: {
       type: Number,
