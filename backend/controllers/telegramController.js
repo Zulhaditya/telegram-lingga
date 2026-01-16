@@ -8,25 +8,46 @@ const path = require("path");
 // @access  Private
 const getTelegram = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, search, startDate, endDate, sortOrder } = req.query;
     let filter = {};
 
     if (status) {
       filter.status = status;
     }
 
+    // Date range filter
+    if (startDate || endDate) {
+      filter.tanggal = {};
+      if (startDate) filter.tanggal.$gte = new Date(startDate);
+      if (endDate) filter.tanggal.$lte = new Date(endDate);
+    }
+
+    // Search query
+    if (search) {
+      filter.$or = [
+        { perihal: { $regex: search, $options: "i" } },
+        { nomorSurat: { $regex: search, $options: "i" } },
+        { instansiPengirim: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Sort options
+    let sortOptions = {};
+    sortOptions.tanggal = sortOrder === "asc" ? 1 : -1;
+
     let telegrams;
 
     if (req.user.role === "admin") {
-      telegrams = await Telegram.find(filter).populate(
-        "instansiPenerima",
-        "nama email profileImageUrl"
-      );
+      telegrams = await Telegram.find(filter)
+        .sort(sortOptions)
+        .populate("instansiPenerima", "nama email profileImageUrl");
     } else {
       telegrams = await Telegram.find({
         ...filter,
         instansiPenerima: req.user._id,
-      }).populate("instansiPenerima", "nama email profileImageUrl");
+      })
+        .sort(sortOptions)
+        .populate("instansiPenerima", "nama email profileImageUrl");
     }
 
     // Tambahkan todoChecklist ke setiap telegram
