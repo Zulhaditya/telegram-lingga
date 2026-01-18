@@ -8,7 +8,15 @@ const path = require("path");
 // @access  Private
 const getTelegram = async (req, res) => {
   try {
-    const { status, search, startDate, endDate, sortOrder } = req.query;
+    const {
+      status,
+      search,
+      startDate,
+      endDate,
+      sortOrder,
+      page = 1,
+      limit = 9,
+    } = req.query;
     let filter = {};
 
     if (status) {
@@ -35,11 +43,15 @@ const getTelegram = async (req, res) => {
     let sortOptions = {};
     sortOptions.tanggal = sortOrder === "asc" ? 1 : -1;
 
+    const skip = (page - 1) * limit;
+
     let telegrams;
 
     if (req.user.role === "admin") {
       telegrams = await Telegram.find(filter)
         .sort(sortOptions)
+        .skip(skip)
+        .limit(limit)
         .populate("instansiPenerima", "nama email profileImageUrl");
     } else {
       telegrams = await Telegram.find({
@@ -47,6 +59,8 @@ const getTelegram = async (req, res) => {
         instansiPenerima: req.user._id,
       })
         .sort(sortOptions)
+        .skip(skip)
+        .limit(limit)
         .populate("instansiPenerima", "nama email profileImageUrl");
     }
 
@@ -68,6 +82,14 @@ const getTelegram = async (req, res) => {
       })
     );
 
+    // Hitung total untuk pagination
+    const total = await Telegram.countDocuments(
+      req.user.role === "admin"
+        ? filter
+        : { ...filter, instansiPenerima: req.user._id }
+    );
+    const totalPages = Math.ceil(total / limit);
+
     // Hitung status telegram
     const allTelegrams = await Telegram.countDocuments(
       req.user.role === "admin" ? {} : { instansiPenerima: req.user._id }
@@ -87,6 +109,7 @@ const getTelegram = async (req, res) => {
 
     res.json({
       telegrams,
+      totalPages,
       statusSummary: {
         all: allTelegrams,
         readTelegrams,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../../utils/axiosInstance";
@@ -9,6 +9,7 @@ import TelegramCard from "../../components/Cards/TelegramCard";
 import toast from "react-hot-toast";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import ReactPaginate from "react-paginate";
 
 const MyTelegram = () => {
   const [allTelegrams, setAllTelegrams] = useState([]);
@@ -17,17 +18,31 @@ const MyTelegram = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState([null, null]);
   const [sortOrder, setSortOrder] = useState("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 
   const navigate = useNavigate();
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const getAllTelegrams = async () => {
     try {
+      setLoading(true);
       const response = await axiosInstance.get(
         API_PATHS.TELEGRAMS.GET_ALL_TELEGRAMS,
         {
           params: {
             status: filterStatus === "Semua" ? "" : filterStatus,
-            search: searchQuery,
+            search: debouncedSearchQuery,
             startDate: dateRange[0]
               ? dateRange[0].toISOString().split("T")[0]
               : "",
@@ -35,6 +50,7 @@ const MyTelegram = () => {
               ? dateRange[1].toISOString().split("T")[0]
               : "",
             sortOrder,
+            page: currentPage,
           },
         }
       );
@@ -52,8 +68,11 @@ const MyTelegram = () => {
       ];
 
       setTabs(statusArray);
+      setTotalPages(response.data.totalPages || 1);
     } catch (error) {
       console.error("Error fetching instansi:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,6 +86,17 @@ const MyTelegram = () => {
       const response = await axiosInstance.get(
         API_PATHS.REPORTS.EXPORT_TELEGRAM,
         {
+          params: {
+            status: filterStatus === "Semua" ? "" : filterStatus,
+            search: searchQuery,
+            startDate: dateRange[0]
+              ? dateRange[0].toISOString().split("T")[0]
+              : "",
+            endDate: dateRange[1]
+              ? dateRange[1].toISOString().split("T")[0]
+              : "",
+            sortOrder,
+          },
           responseType: "blob",
         }
       );
@@ -89,7 +119,11 @@ const MyTelegram = () => {
   useEffect(() => {
     getAllTelegrams();
     return () => {};
-  }, [filterStatus, searchQuery, dateRange, sortOrder]);
+  }, [filterStatus, debouncedSearchQuery, dateRange, sortOrder, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterStatus, debouncedSearchQuery, dateRange, sortOrder]);
 
   return (
     <DashboardLayout activeMenu="Telegram Instansi">
@@ -180,28 +214,71 @@ const MyTelegram = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          {allTelegrams?.map((item, index) => (
-            <TelegramCard
-              key={item._id}
-              instansiPengirim={item.instansiPengirim}
-              nomorSurat={item.nomorSurat}
-              instansiPenerima={item.instansiPenerima?.map(
-                (item) => item.profileImageUrl
-              )}
-              perihal={item.perihal}
-              klasifikasi={item.klasifikasi}
-              status={item.status}
-              tanggal={item.tanggal}
-              progress={item.progress}
-              attachmentCount={item.attachments?.length || 0}
-              completedTodoCount={item.completedTodoCount || 0}
-              todoChecklist={item.todoChecklist || []}
-              onClick={() => {
-                handleClick(item._id);
-              }}
-            />
-          ))}
+          {loading
+            ? // Loading skeleton
+              Array.from({ length: 9 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 animate-pulse"
+                >
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded mb-1"></div>
+                  <div className="h-3 bg-gray-200 rounded w-3/4 mb-3"></div>
+                  <div className="h-8 bg-gray-200 rounded"></div>
+                </div>
+              ))
+            : allTelegrams?.map((item, index) => (
+                <TelegramCard
+                  key={item._id}
+                  instansiPengirim={item.instansiPengirim}
+                  nomorSurat={item.nomorSurat}
+                  instansiPenerima={item.instansiPenerima?.map(
+                    (item) => item.profileImageUrl
+                  )}
+                  perihal={item.perihal}
+                  klasifikasi={item.klasifikasi}
+                  status={item.status}
+                  tanggal={item.tanggal}
+                  progress={item.progress}
+                  attachmentCount={item.attachments?.length || 0}
+                  completedTodoCount={item.completedTodoCount || 0}
+                  todoChecklist={item.todoChecklist || []}
+                  onClick={() => {
+                    handleClick(item._id);
+                  }}
+                />
+              ))}
         </div>
+
+        {totalPages > 1 && (
+          <div className="mt-6">
+            <ReactPaginate
+              pageCount={totalPages}
+              forcePage={currentPage - 1}
+              onPageChange={({ selected }) =>
+                !loading && setCurrentPage(selected + 1)
+              }
+              containerClassName="flex items-center justify-end space-x-1"
+              pageClassName={`px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50 cursor-pointer transition-colors ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              activeClassName="bg-primary text-white border-primary hover:bg-primary-dark"
+              previousClassName={`px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50 cursor-pointer transition-colors ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              nextClassName={`px-3 py-2 rounded-md border border-gray-300 hover:bg-gray-50 cursor-pointer transition-colors ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              disabledClassName="opacity-50 cursor-not-allowed"
+              breakClassName="px-3 py-2 text-gray-500"
+              previousLabel="Previous"
+              nextLabel="Next"
+              breakLabel="..."
+              marginPagesDisplayed={1}
+              pageRangeDisplayed={3}
+            />
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

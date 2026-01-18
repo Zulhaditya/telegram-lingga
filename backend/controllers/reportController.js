@@ -7,10 +7,47 @@ const excelJS = require("exceljs");
 // @access  Private (Admin)
 const exportTelegramsReport = async (req, res) => {
   try {
-    const telegrams = await Telegram.find().populate(
-      "instansiPenerima",
-      "nama email"
-    );
+    const { status, search, startDate, endDate, sortOrder } = req.query;
+
+    // Build query object
+    let query = {};
+
+    // Filter by status
+    if (status && status !== "") {
+      query.status = status;
+    }
+
+    // Filter by date range
+    if (startDate || endDate) {
+      query.tanggal = {};
+      if (startDate) {
+        query.tanggal.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.tanggal.$lte = new Date(endDate);
+      }
+    }
+
+    // Search filter
+    if (search && search.trim() !== "") {
+      query.$or = [
+        { perihal: { $regex: search, $options: "i" } },
+        { nomorSurat: { $regex: search, $options: "i" } },
+        { instansiPengirim: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Build sort object
+    let sort = {};
+    if (sortOrder === "asc") {
+      sort.tanggal = 1;
+    } else {
+      sort.tanggal = -1; // default desc
+    }
+
+    const telegrams = await Telegram.find(query)
+      .populate("instansiPenerima", "nama email")
+      .sort(sort);
 
     const workbook = new excelJS.Workbook();
     const worksheet = workbook.addWorksheet(
