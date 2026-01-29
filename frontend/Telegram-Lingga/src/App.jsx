@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
+import TwoFactor from "./pages/Auth/TwoFactor";
 
 import Dashboard from "./pages/Admin/Dashboard";
 import ManageTelegram from "./pages/Admin/ManageTelegram";
@@ -32,6 +33,7 @@ const App = () => {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/2fa" element={<TwoFactor />} />
 
             {/* Admin Routes */}
             <Route element={<PrivateRoute allowedRoles={["admin"]} />}>

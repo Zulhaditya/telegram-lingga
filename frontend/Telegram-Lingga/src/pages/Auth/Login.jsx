@@ -39,7 +39,18 @@ const Login = () => {
         password,
       });
 
-      const { token, role } = response.data;
+      const { token, role, twoFactorRequired, twoFactorEnabled, _id, qrCode } =
+        response.data;
+
+      if (twoFactorRequired) {
+        // Simpan data sementara untuk proses 2FA login (sertakan apakah sudah enable & qr jika ada)
+        localStorage.setItem(
+          "temp2faUser",
+          JSON.stringify({ _id, email, twoFactorEnabled, qrCode }),
+        );
+        navigate("/2fa");
+        return;
+      }
 
       if (token) {
         localStorage.setItem("token", token);
