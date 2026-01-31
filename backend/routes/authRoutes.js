@@ -4,9 +4,11 @@ const {
   loginUser,
   getUserProfile,
   updateUserProfile,
+  changePassword,
   setupTwoFactor,
   verifyTwoFactorSetup,
   verifyTwoFactor,
+  toggle2FA,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
 const upload = require("../middleware/uploadMiddleware");
@@ -19,10 +21,12 @@ router.post("/login", loginUser);
 router.post("/2fa/verify", verifyTwoFactor); // public endpoint to verify OTP during login
 router.get("/profile", protect, getUserProfile);
 router.put("/profile", protect, updateUserProfile);
+router.post("/change-password", protect, changePassword);
 
 // 2FA routes
 router.get("/2fa/setup", protect, setupTwoFactor);
 router.post("/2fa/verify-setup", protect, verifyTwoFactorSetup);
+router.post("/2fa/toggle", protect, toggle2FA);
 
 router.post("/upload-image", upload.single("image"), (req, res) => {
   if (!req.file) {

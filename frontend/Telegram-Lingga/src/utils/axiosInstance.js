@@ -22,7 +22,7 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response Interceptor
@@ -34,8 +34,18 @@ axiosInstance.interceptors.response.use(
     // Handle error biasa secara global
     if (error.response) {
       if (error.response.status === 401) {
-        // Redirect ke halaman login
-        window.location.href = "/login";
+        // Hanya redirect ke login jika error adalah token invalid, bukan password salah
+        // Token invalid biasanya tidak memiliki message field atau message generic
+        const shouldLogout =
+          !error.response.data?.message ||
+          error.response.data?.message?.includes("token") ||
+          error.response.data?.message?.includes("autentik");
+
+        if (shouldLogout) {
+          localStorage.removeItem("token");
+          window.location.href = "/login";
+        }
+        // Jika 401 karena hal lain (misal password), biarkan component handle errornya
       } else if (error.response.status === 500) {
         console.error("Server error. Coba lagi nanti");
       }
@@ -43,7 +53,7 @@ axiosInstance.interceptors.response.use(
       console.error("Request timeout. Coba lagi nanti");
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export default axiosInstance;

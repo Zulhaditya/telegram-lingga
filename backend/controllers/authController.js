@@ -84,7 +84,7 @@ const loginUser = async (req, res) => {
     // Jika user sudah mengaktifkan 2FA, informasikan agar front-end menampilkan input OTP
     // Untuk alur yang diminta: selalu arahkan ke halaman 2FA setelah password valid
     // Jika user sudah mengaktifkan 2FA, beri tahu front-end bahwa harus memasukkan OTP
-    if (user.twoFactorEnabled) {
+    if (user.twoFactorEnabled && user.twoFactorSecret) {
       return res.json({
         twoFactorRequired: true,
         twoFactorEnabled: true,
@@ -94,12 +94,19 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Jika user belum mengaktifkan 2FA, buat temporary secret & QR dan kembalikan ke front-end
+    // Jika user belum mengaktifkan 2FA atau 2FA corrupt (enabled tapi no secret), buat temporary secret & QR dan kembalikan ke front-end
     const secret = speakeasy.generateSecret({
       name: `Telegram-Lingga (${user.email})`,
     });
 
     user.twoFactorTempSecret = secret.base32;
+
+    // Jika 2FA corrupt (enabled tapi no secret), reset ke disabled
+    if (user.twoFactorEnabled && !user.twoFactorSecret) {
+      user.twoFactorEnabled = false;
+      user.twoFactorSecret = null;
+    }
+
     await user.save();
 
     const otpauth = secret.otpauth_url;
@@ -144,8 +151,19 @@ const updateUserProfile = async (req, res) => {
       return res.status(404).json({ message: "User tidak ditemukan" });
     }
 
+    // Validasi email jika berubah
+    if (req.body.email && req.body.email !== user.email) {
+      const emailExists = await User.findOne({ email: req.body.email });
+      if (emailExists) {
+        return res.status(400).json({ message: "Email sudah terdaftar" });
+      }
+    }
+
     user.nama = req.body.nama || user.nama;
     user.email = req.body.email || user.email;
+    if (req.body.profileImageUrl) {
+      user.profileImageUrl = req.body.profileImageUrl;
+    }
 
     if (req.body.password) {
       const salt = await bcrypt.genSalt(10);
@@ -159,6 +177,8 @@ const updateUserProfile = async (req, res) => {
       nama: updatedUser.nama,
       email: updatedUser.email,
       role: updatedUser.role,
+      profileImageUrl: updatedUser.profileImageUrl,
+      twoFactorEnabled: updatedUser.twoFactorEnabled,
       token: generateToken(updatedUser._id),
     });
   } catch (error) {
@@ -276,12 +296,118 @@ const verifyTwoFactor = async (req, res) => {
   }
 };
 
+// @desc    Change password user
+// @route   POST /api/auth/change-password
+// @access  Private (membutuhkan token JWT)
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        message:
+          "Current password, new password, dan confirm password harus diisi",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ message: "Password baru dan confirm password tidak cocok" });
+    }
+
+    if (newPassword.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "Password baru minimal 6 karakter" });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User tidak ditemukan" });
+    }
+
+    // Verifikasi current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Password saat ini tidak valid" });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.json({ message: "Password berhasil diubah" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc    Disable/Disable 2FA
+// @route   POST /api/auth/2fa/toggle
+// @access  Private
+const toggle2FA = async (req, res) => {
+  try {
+    const { password } = req.body;
+
+    if (!password) {
+      return res.status(400).json({ message: "Password diperlukan" });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User tidak ditemukan" });
+    }
+
+    // Verifikasi password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Password tidak valid" });
+    }
+
+    // Handle corrupted 2FA state (enabled but no secret)
+    if (user.twoFactorEnabled && !user.twoFactorSecret) {
+      // Force disable corrupted 2FA
+      user.twoFactorEnabled = false;
+      user.twoFactorSecret = null;
+      user.twoFactorTempSecret = null;
+      await user.save();
+
+      return res.json({
+        message:
+          "2FA corrupt - telah direset. Silakan setup 2FA kembali jika diperlukan",
+        twoFactorEnabled: false,
+      });
+    }
+
+    // Toggle 2FA normally
+    user.twoFactorEnabled = !user.twoFactorEnabled;
+    if (!user.twoFactorEnabled) {
+      user.twoFactorSecret = null;
+      user.twoFactorTempSecret = null;
+    }
+    await user.save();
+
+    res.json({
+      message: `2FA berhasil ${
+        user.twoFactorEnabled ? "diaktifkan" : "dinonaktifkan"
+      }`,
+      twoFactorEnabled: user.twoFactorEnabled,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   getUserProfile,
   updateUserProfile,
+  changePassword,
   setupTwoFactor,
   verifyTwoFactorSetup,
   verifyTwoFactor,
+  toggle2FA,
 };

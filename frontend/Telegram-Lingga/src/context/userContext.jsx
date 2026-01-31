@@ -34,7 +34,9 @@ const UserProvider = ({ children }) => {
 
   const updateUser = (userData) => {
     setUser(userData);
-    localStorage.setItem("token", userData.token); // Simpan token
+    if (userData.token) {
+      localStorage.setItem("token", userData.token); // Simpan token
+    }
     setLoading(false);
   };
 
@@ -44,7 +46,9 @@ const UserProvider = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, loading, updateUser, clearUser }}>
+    <UserContext.Provider
+      value={{ user, setUser, loading, updateUser, clearUser }}
+    >
       {children}
     </UserContext.Provider>
   );

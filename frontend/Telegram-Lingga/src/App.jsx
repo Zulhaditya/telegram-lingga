@@ -19,6 +19,8 @@ import UserDashboard from "./pages/User/UserDashboard";
 import MyTelegram from "./pages/User/MyTelegram";
 import ViewTelegramDetails from "./pages/User/ViewTelegramDetails";
 
+import ProfilePage from "./pages/Profile/ProfilePage";
+
 import PrivateRoute from "./routes/PrivateRoute";
 import UserProvider, { UserContext } from "./context/userContext";
 import { useContext } from "react";
@@ -54,6 +56,11 @@ const App = () => {
                 path="/user/telegram-details/:id"
                 element={<ViewTelegramDetails />}
               />
+            </Route>
+
+            {/* Profile Route - Available for all authenticated users */}
+            <Route element={<PrivateRoute allowedRoles={["admin", "opd"]} />}>
+              <Route path="/profile" element={<ProfilePage />} />
             </Route>
 
             {/* Default Routes */}
