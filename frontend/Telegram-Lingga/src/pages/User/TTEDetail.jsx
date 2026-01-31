@@ -192,6 +192,39 @@ const TTEDetail = () => {
             </div>
           </div>
 
+          {/* Informasi Kepegawaian Section */}
+          <div className="border-t border-gray-200 mt-6 pt-6">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+              💼 Informasi Kepegawaian
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Nama Jabatan</p>
+                <p className="text-lg font-medium text-gray-800">
+                  {tte.namaJabatan}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 mb-1">Pangkat / Golongan</p>
+                <p className="text-lg font-medium text-gray-800">
+                  {tte.pangkatGolongan}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 mb-1">
+                  NIP (Nomor Induk Kepegawaian)
+                </p>
+                <p className="text-lg font-medium text-gray-800">{tte.nip}</p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-sm text-gray-600 mb-1">Asal Instansi</p>
+                <p className="text-lg font-medium text-gray-800">
+                  {tte.asalInstansi}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Documents Section */}
           <div className="border-t border-gray-200 mt-6 pt-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">
@@ -292,6 +325,52 @@ const TTEDetail = () => {
               )}
             </div>
           </div>
+
+          {/* TTE Credentials Section (if approved) */}
+          {tte.status === "approved" && tte.tteEmail && (
+            <div className="border-t border-gray-200 mt-6 pt-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                🔐 Kredensial Tanda Tangan Elektronik
+              </h2>
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
+                <div className="space-y-4">
+                  <div className="bg-white rounded-lg p-4 border border-green-200">
+                    <p className="text-sm text-gray-600 font-medium mb-2">
+                      Email TTE
+                    </p>
+                    <p className="text-lg font-medium text-gray-800 break-all">
+                      {tte.tteEmail}
+                    </p>
+                  </div>
+
+                  <div className="bg-white rounded-lg p-4 border border-green-200">
+                    <p className="text-sm text-gray-600 font-medium mb-2">
+                      Password TTE
+                    </p>
+                    <p className="text-lg font-medium text-gray-800 font-mono">
+                      {tte.ttePassword}
+                    </p>
+                  </div>
+
+                  <div className="bg-white rounded-lg p-4 border border-green-200">
+                    <p className="text-sm text-gray-600 font-medium mb-2">
+                      Passphrase TTE
+                    </p>
+                    <p className="text-lg font-medium text-gray-800 font-mono">
+                      {tte.ttePassphrase}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800">
+                    <strong>⚠️ Penting:</strong> Simpan kredensial ini dengan
+                    aman. Jangan bagikan kepada siapapun.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* TTE Signature Section (if approved) */}
           {tte.status === "approved" && tte.tteSignature && (

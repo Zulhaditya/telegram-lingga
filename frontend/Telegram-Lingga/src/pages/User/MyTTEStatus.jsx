@@ -49,7 +49,7 @@ const MyTTEStatus = () => {
     try {
       const response = await axiosInstance.get(API_PATHS.TTE.GET_MY_TTE);
       if (response.status === 200) {
-        const ttes = response.data.tte ? [response.data.tte] : [];
+        const ttes = Array.isArray(response.data.tte) ? response.data.tte : [];
         setTteList(ttes);
         calculateStats(ttes);
       }
@@ -135,7 +135,7 @@ const MyTTEStatus = () => {
   }
 
   return (
-    <DashboardLayout activeMenu="Tanda Tangan Elektronik">
+    <DashboardLayout activeMenu="Kelola TTE">
       <div className="bg-gray-100 p-6 -mx-5">
         <div className="max-w-7xl mx-auto">
           {/* Header */}

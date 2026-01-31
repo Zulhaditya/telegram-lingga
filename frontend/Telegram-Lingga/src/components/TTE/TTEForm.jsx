@@ -10,6 +10,9 @@ const TTEForm = ({ onSubmit, loading }) => {
     tanggalLahir: "",
     alamat: "",
     nomorTelepon: "",
+    namaJabatan: "",
+    pangkatGolongan: "",
+    nip: "",
   });
 
   const [files, setFiles] = useState({
@@ -86,9 +89,12 @@ const TTEForm = ({ onSubmit, loading }) => {
       !formData.tempatLahir ||
       !formData.tanggalLahir ||
       !formData.alamat ||
-      !formData.nomorTelepon
+      !formData.nomorTelepon ||
+      !formData.namaJabatan ||
+      !formData.pangkatGolongan ||
+      !formData.nip
     ) {
-      toast.error("Semua field biodata harus diisi");
+      toast.error("Semua field biodata dan kepegawaian harus diisi");
       return;
     }
 
@@ -232,6 +238,61 @@ const TTEForm = ({ onSubmit, loading }) => {
               onChange={handleInputChange}
               placeholder="Contoh: 0812345678 atau +6212345678"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              disabled={loading}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Informasi Kepegawaian Section */}
+      <div className="mb-8">
+        <h3 className="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b border-green-200">
+          Informasi Kepegawaian
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nama Jabatan <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="namaJabatan"
+              value={formData.namaJabatan}
+              onChange={handleInputChange}
+              placeholder="Contoh: Direktur, Kepala Bidang, dll"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Pangkat / Golongan <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="pangkatGolongan"
+              value={formData.pangkatGolongan}
+              onChange={handleInputChange}
+              placeholder="Contoh: IV/b, III/d, dll"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition"
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              NIP (Nomor Induk Kepegawaian){" "}
+              <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="nip"
+              value={formData.nip}
+              onChange={handleInputChange}
+              placeholder="Contoh: 19700101 200000 1 001"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 transition"
               disabled={loading}
             />
           </div>

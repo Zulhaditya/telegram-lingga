@@ -18,6 +18,9 @@ const submitTTE = async (req, res) => {
       tanggalLahir,
       alamat,
       nomorTelepon,
+      namaJabatan,
+      pangkatGolongan,
+      nip,
     } = req.body;
     const userId = req.user.id;
 
@@ -28,11 +31,14 @@ const submitTTE = async (req, res) => {
       !tempatLahir ||
       !tanggalLahir ||
       !alamat ||
-      !nomorTelepon
+      !nomorTelepon ||
+      !namaJabatan ||
+      !pangkatGolongan ||
+      !nip
     ) {
       return res
         .status(400)
-        .json({ message: "Semua field biodata harus diisi" });
+        .json({ message: "Semua field biodata dan kepegawaian harus diisi" });
     }
 
     // Validasi file
@@ -42,29 +48,19 @@ const submitTTE = async (req, res) => {
         .json({ message: "Foto selfie dan surat keterangan harus diupload" });
     }
 
-    // Cek apakah user sudah memiliki pengajuan yang sedang diproses
-    const existingTTE = await TTE.findOne({
-      userId,
-      status: { $in: ["pending", "approved"] },
-    });
-
-    if (existingTTE) {
-      // Hapus file yang baru diupload
-      if (req.files.fotoSelfie) {
-        fs.unlinkSync(req.files.fotoSelfie[0].path);
-      }
-      if (req.files.suratKeterangan) {
-        fs.unlinkSync(req.files.suratKeterangan[0].path);
-      }
-
-      return res.status(400).json({
-        message: "Anda sudah memiliki pengajuan TTE yang aktif",
-      });
+    // Ambil data user untuk mendapatkan asal instansi
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User tidak ditemukan" });
     }
 
-    // Cek duplikasi NIK
-    const existingNIK = await TTE.findOne({ nik });
-    if (existingNIK) {
+    // Validasi NIK dengan nama yang sama (cegah duplikasi data yang identik)
+    const duplicateRecord = await TTE.findOne({
+      nik,
+      namaLengkap,
+    });
+
+    if (duplicateRecord) {
       // Hapus file yang baru diupload
       if (req.files.fotoSelfie) {
         fs.unlinkSync(req.files.fotoSelfie[0].path);
@@ -74,7 +70,8 @@ const submitTTE = async (req, res) => {
       }
 
       return res.status(400).json({
-        message: "NIK sudah terdaftar dalam sistem",
+        message:
+          "Data dengan NIK dan nama yang sama sudah terdaftar dalam sistem",
       });
     }
 
@@ -87,6 +84,10 @@ const submitTTE = async (req, res) => {
       tanggalLahir: new Date(tanggalLahir),
       alamat,
       nomorTelepon,
+      namaJabatan,
+      pangkatGolongan,
+      nip,
+      asalInstansi: user.nama,
       fotoSelfie: req.files.fotoSelfie[0].path.replace(/\\/g, "/"),
       suratKeterangan: req.files.suratKeterangan[0].path.replace(/\\/g, "/"),
     });
@@ -125,15 +126,16 @@ const getMyTTE = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const tte = await TTE.findOne({ userId })
+    const tteList = await TTE.find({ userId })
       .populate("userId", "nama email profileImageUrl")
-      .populate("approvedBy", "nama email");
+      .populate("approvedBy", "nama email")
+      .sort({ createdAt: -1 });
 
-    if (!tte) {
+    if (!tteList || tteList.length === 0) {
       return res.status(404).json({ message: "Data TTE tidak ditemukan" });
     }
 
-    res.status(200).json({ tte });
+    res.status(200).json({ tte: tteList });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -204,7 +206,7 @@ const getTTEById = async (req, res) => {
 const approveTTE = async (req, res) => {
   try {
     const { id } = req.params;
-    const { tteSignatureName } = req.body;
+    const { tteSignatureName, tteEmail, ttePassword, ttePassphrase } = req.body;
     const adminId = req.user.id;
 
     // Validasi signature file
@@ -218,6 +220,17 @@ const approveTTE = async (req, res) => {
       return res.status(400).json({ message: "Nama signature harus diisi" });
     }
 
+    // Validasi TTE credentials
+    if (!tteEmail || !ttePassword || !ttePassphrase) {
+      // Hapus file yang diupload
+      if (req.file) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(400).json({
+        message: "Email, password, dan passphrase TTE harus diisi",
+      });
+    }
+
     const tte = await TTE.findById(id);
 
     if (!tte) {
@@ -228,10 +241,13 @@ const approveTTE = async (req, res) => {
       return res.status(404).json({ message: "Data TTE tidak ditemukan" });
     }
 
-    // Update TTE dengan status approved dan signature
+    // Update TTE dengan status approved, signature, dan credentials
     tte.status = "approved";
     tte.tteSignature = req.file.path.replace(/\\/g, "/");
     tte.tteSignatureName = tteSignatureName;
+    tte.tteEmail = tteEmail;
+    tte.ttePassword = ttePassword;
+    tte.ttePassphrase = ttePassphrase;
     tte.approvedBy = adminId;
     tte.approvedAt = new Date();
 

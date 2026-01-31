@@ -179,7 +179,7 @@ const ManageTTE = () => {
   }
 
   return (
-    <DashboardLayout activeMenu="Tanda Tangan Elektronik">
+    <DashboardLayout activeMenu="Kelola TTE">
       <div className="bg-gray-100 p-6 -mx-5">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -310,7 +310,10 @@ const ManageTTE = () => {
                         Nama Lengkap
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
-                        NIK
+                        Jabatan
+                      </th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                        Pangkat / Golongan
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                         Nomor Telepon
@@ -336,7 +339,10 @@ const ManageTTE = () => {
                           {tte.namaLengkap}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
-                          {tte.nik}
+                          {tte.namaJabatan}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {tte.pangkatGolongan}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
                           {tte.nomorTelepon}

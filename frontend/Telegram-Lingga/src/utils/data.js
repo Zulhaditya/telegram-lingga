@@ -35,7 +35,7 @@ export const SIDE_MENU_DATA = [
   },
   {
     id: "05",
-    label: "Tanda Tangan Elektronik",
+    label: "Kelola TTE",
     icon: LuFileText,
     path: "/admin/tte",
   },
@@ -68,7 +68,7 @@ export const SIDE_MENU_USER_DATA = [
   },
   {
     id: "03",
-    label: "Tanda Tangan Elektronik",
+    label: "Kelola TTE",
     icon: LuFileText,
     path: "/user/tte-status",
   },

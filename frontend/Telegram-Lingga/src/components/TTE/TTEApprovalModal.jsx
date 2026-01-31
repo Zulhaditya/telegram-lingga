@@ -19,6 +19,9 @@ const TTEApprovalModal = ({ tte, onClose, onApprove, onReject, loading }) => {
   const [activeTab, setActiveTab] = useState("info");
   const [signatureFile, setSignatureFile] = useState(null);
   const [signatureName, setSignatureName] = useState("");
+  const [tteEmail, setTteEmail] = useState("");
+  const [ttePassword, setTtePassword] = useState("");
+  const [ttePassphrase, setTtePassphrase] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [showApprovalForm, setShowApprovalForm] = useState(false);
   const [showRejectionForm, setShowRejectionForm] = useState(false);
@@ -44,14 +47,25 @@ const TTEApprovalModal = ({ tte, onClose, onApprove, onReject, loading }) => {
       return;
     }
 
+    if (!tteEmail || !ttePassword || !ttePassphrase) {
+      toast.error("Email, password, dan passphrase TTE harus diisi");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("tteSignature", signatureFile);
     formData.append("tteSignatureName", signatureName);
+    formData.append("tteEmail", tteEmail);
+    formData.append("ttePassword", ttePassword);
+    formData.append("ttePassphrase", ttePassphrase);
 
     await onApprove(tte._id, formData);
     setShowApprovalForm(false);
     setSignatureFile(null);
     setSignatureName("");
+    setTteEmail("");
+    setTtePassword("");
+    setTtePassphrase("");
   };
 
   const handleReject = async () => {
@@ -75,7 +89,7 @@ const TTEApprovalModal = ({ tte, onClose, onApprove, onReject, loading }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
+    <div className="fixed inset-0 bg-transparent backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 my-8">
         {/* Header */}
         <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
@@ -179,6 +193,42 @@ const TTEApprovalModal = ({ tte, onClose, onApprove, onReject, loading }) => {
               <hr className="my-6" />
 
               <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                Informasi Kepegawaian
+              </h3>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold">
+                    Nama Jabatan
+                  </p>
+                  <p className="text-gray-800 font-medium">{tte.namaJabatan}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold">
+                    Pangkat / Golongan
+                  </p>
+                  <p className="text-gray-800 font-medium">
+                    {tte.pangkatGolongan}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase font-semibold">
+                    NIP
+                  </p>
+                  <p className="text-gray-800 font-medium">{tte.nip}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-gray-500 uppercase font-semibold">
+                    Asal Instansi
+                  </p>
+                  <p className="text-gray-800 font-medium">
+                    {tte.asalInstansi}
+                  </p>
+                </div>
+              </div>
+
+              <hr className="my-6" />
+
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">
                 Informasi Pengajuan
               </h3>
               <div className="grid grid-cols-2 gap-6">
@@ -257,11 +307,11 @@ const TTEApprovalModal = ({ tte, onClose, onApprove, onReject, loading }) => {
                   <p className="text-sm font-semibold text-gray-700 mb-3">
                     📸 Foto Selfie
                   </p>
-                  <div className="border border-gray-300 rounded-lg overflow-hidden bg-gray-100">
+                  <div className="flex justify-center">
                     <img
                       src={`${BASE_URL}/${tte.fotoSelfie}`}
                       alt="Foto Selfie"
-                      className="w-full max-h-96 object-cover"
+                      className="w-32 h-32 rounded-full object-cover border-4 border-gray-300"
                     />
                   </div>
                 </div>
@@ -349,77 +399,142 @@ const TTEApprovalModal = ({ tte, onClose, onApprove, onReject, loading }) => {
               ) : showApprovalForm ? (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-6">
                   <h3 className="text-lg font-semibold text-green-900 mb-4">
-                    🖼️ Unggah Tanda Tangan Elektronik
+                    ✅ Persetujuan dan Pengaturan TTE
                   </h3>
 
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nama Signature <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={signatureName}
-                      onChange={(e) => setSignatureName(e.target.value)}
-                      placeholder="Contoh: Direktur, Kepala Bidang, dll"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                      disabled={loading}
-                    />
-                  </div>
+                  {/* TTE Credentials Section */}
+                  <div className="mb-6 pb-6 border-b border-green-200">
+                    <h4 className="text-md font-semibold text-green-800 mb-4">
+                      📧 Data Kredensial TTE
+                    </h4>
 
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Upload File Signature{" "}
-                      <span className="text-red-500">*</span>
-                      <span className="text-xs text-gray-500 ml-1">
-                        (JPG, PNG, maks 5MB)
-                      </span>
-                    </label>
-                    {!signatureFile ? (
-                      <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-green-400 rounded-lg p-6 cursor-pointer hover:border-green-600 bg-green-50 transition">
-                        <FiUpload className="text-3xl text-green-500 mb-2" />
-                        <span className="text-sm text-gray-700 font-medium">
-                          Klik untuk upload signature
-                        </span>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Email TTE <span className="text-red-500">*</span>
+                        </label>
                         <input
-                          type="file"
-                          onChange={handleSignatureChange}
-                          accept="image/*"
-                          className="hidden"
+                          type="email"
+                          value={tteEmail}
+                          onChange={(e) => setTteEmail(e.target.value)}
+                          placeholder="email@example.com"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                           disabled={loading}
                         />
-                      </label>
-                    ) : (
-                      <div className="bg-white p-4 rounded-lg border border-green-400 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-green-100 p-3 rounded">
-                            <FiEye className="text-green-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-800">
-                              {signatureFile.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {(signatureFile.size / 1024 / 1024).toFixed(2)}
-                              MB
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setSignatureFile(null)}
-                          disabled={loading}
-                          className="text-red-600 hover:text-red-700 font-medium"
-                        >
-                          Hapus
-                        </button>
                       </div>
-                    )}
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Password TTE <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="password"
+                          value={ttePassword}
+                          onChange={(e) => setTtePassword(e.target.value)}
+                          placeholder="Masukkan password TTE"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                          disabled={loading}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Passphrase TTE <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="password"
+                          value={ttePassphrase}
+                          onChange={(e) => setTtePassphrase(e.target.value)}
+                          placeholder="Masukkan passphrase TTE"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Signature Section */}
+                  <div>
+                    <h4 className="text-md font-semibold text-green-800 mb-4">
+                      🖼️ Tanda Tangan Elektronik
+                    </h4>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nama Signature <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={signatureName}
+                        onChange={(e) => setSignatureName(e.target.value)}
+                        placeholder="Contoh: Direktur, Kepala Bidang, dll"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                        disabled={loading}
+                      />
+                    </div>
+
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Upload File Signature{" "}
+                        <span className="text-red-500">*</span>
+                        <span className="text-xs text-gray-500 ml-1">
+                          (JPG, PNG, maks 5MB)
+                        </span>
+                      </label>
+                      {!signatureFile ? (
+                        <label className="flex flex-col items-center justify-center w-full border-2 border-dashed border-green-400 rounded-lg p-6 cursor-pointer hover:border-green-600 bg-green-50 transition">
+                          <FiUpload className="text-3xl text-green-500 mb-2" />
+                          <span className="text-sm text-gray-700 font-medium">
+                            Klik untuk upload signature
+                          </span>
+                          <input
+                            type="file"
+                            onChange={handleSignatureChange}
+                            accept="image/*"
+                            className="hidden"
+                            disabled={loading}
+                          />
+                        </label>
+                      ) : (
+                        <div className="bg-white p-4 rounded-lg border border-green-400 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="bg-green-100 p-3 rounded">
+                              <FiEye className="text-green-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-gray-800">
+                                {signatureFile.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {(signatureFile.size / 1024 / 1024).toFixed(2)}
+                                MB
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setSignatureFile(null)}
+                            disabled={loading}
+                            className="text-red-600 hover:text-red-700 font-medium"
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex gap-3">
                     <button
                       onClick={handleApprove}
-                      disabled={loading || !signatureFile || !signatureName}
+                      disabled={
+                        loading ||
+                        !signatureFile ||
+                        !signatureName ||
+                        !tteEmail ||
+                        !ttePassword ||
+                        !ttePassphrase
+                      }
                       className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold transition disabled:bg-gray-400"
                     >
                       {loading ? "Memproses..." : "Konfirmasi Persetujuan"}

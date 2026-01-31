@@ -15,7 +15,6 @@ const TTESchema = new mongoose.Schema(
     nik: {
       type: String,
       required: true,
-      unique: true,
     },
     tempatLahir: {
       type: String,
@@ -30,6 +29,23 @@ const TTESchema = new mongoose.Schema(
       required: true,
     },
     nomorTelepon: {
+      type: String,
+      required: true,
+    },
+    // Informasi kepegawaian
+    namaJabatan: {
+      type: String,
+      required: true,
+    },
+    pangkatGolongan: {
+      type: String,
+      required: true,
+    },
+    nip: {
+      type: String,
+      required: true,
+    },
+    asalInstansi: {
       type: String,
       required: true,
     },
@@ -48,6 +64,19 @@ const TTESchema = new mongoose.Schema(
       default: null,
     },
     tteSignatureName: {
+      type: String,
+      default: null,
+    },
+    // TTE Credentials (diisi admin saat approve)
+    tteEmail: {
+      type: String,
+      default: null,
+    },
+    ttePassword: {
+      type: String,
+      default: null,
+    },
+    ttePassphrase: {
       type: String,
       default: null,
     },
