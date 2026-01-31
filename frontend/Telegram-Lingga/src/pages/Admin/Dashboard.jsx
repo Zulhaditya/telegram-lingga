@@ -9,7 +9,7 @@ import moment from "moment";
 import InfoCard from "../../components/Cards/InfoCard";
 import { addThousandsSeparator } from "../../utils/helper";
 import TelegramListTable from "../../components/TelegramListTable";
-import { LuArrowRight } from "react-icons/lu";
+import { LuArrowRight, LuFileText } from "react-icons/lu";
 import CustomPieChart from "../../components/Charts/CustomPieChart";
 import CustomBarChart from "../../components/Charts/CustomBarChart";
 
@@ -58,7 +58,7 @@ const Dashboard = () => {
   const getDashboardData = async () => {
     try {
       const response = await axiosInstance.get(
-        API_PATHS.TELEGRAMS.GET_DASHBOARD_DATA
+        API_PATHS.TELEGRAMS.GET_DASHBOARD_DATA,
       );
 
       if (response.data) {
@@ -77,7 +77,7 @@ const Dashboard = () => {
   useEffect(() => {
     getDashboardData();
 
-    return () => { };
+    return () => {};
   }, []);
 
   return (
@@ -98,21 +98,21 @@ const Dashboard = () => {
           <InfoCard
             label="Total Telegram"
             value={addThousandsSeparator(
-              dashboardData?.charts?.telegramDistribution?.Semua || 0
+              dashboardData?.charts?.telegramDistribution?.Semua || 0,
             )}
             color="bg-primary"
           />
           <InfoCard
             label="Dibaca"
             value={addThousandsSeparator(
-              dashboardData?.charts?.telegramDistribution?.Dibaca || 0
+              dashboardData?.charts?.telegramDistribution?.Dibaca || 0,
             )}
             color="bg-cyan-500"
           />
           <InfoCard
             label="Belum Dibaca"
             value={addThousandsSeparator(
-              dashboardData?.charts?.telegramDistribution?.BelumDibaca || 0
+              dashboardData?.charts?.telegramDistribution?.BelumDibaca || 0,
             )}
             color="bg-violet-500"
           />
@@ -137,6 +137,43 @@ const Dashboard = () => {
             </div>
 
             <CustomBarChart data={barChartData} />
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <div className="card">
+            <div className="flex items-center justify-between mb-6">
+              <h5 className="text-lg font-semibold flex items-center gap-2">
+                <LuFileText className="text-green-600" />
+                Manajemen Tanda Tangan Elektronik
+              </h5>
+              <button
+                onClick={() => navigate("/admin/tte")}
+                className="card-btn"
+              >
+                Kelola TTE <LuArrowRight className="text-base" />
+              </button>
+            </div>
+
+            <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-6 border border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">
+                    Pengajuan TTE Menunggu Verifikasi
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Kelola dan verifikasi pengajuan tanda tangan elektronik dari
+                    pengguna instansi.
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate("/admin/tte")}
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition whitespace-nowrap ml-4"
+                >
+                  Kelola Sekarang
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

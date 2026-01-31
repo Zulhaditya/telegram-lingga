@@ -5,6 +5,7 @@ import {
   LuSquarePlus,
   LuLogOut,
   LuUser,
+  LuFileText,
 } from "react-icons/lu";
 
 export const SIDE_MENU_DATA = [
@@ -34,12 +35,18 @@ export const SIDE_MENU_DATA = [
   },
   {
     id: "05",
+    label: "Tanda Tangan Elektronik",
+    icon: LuFileText,
+    path: "/admin/tte",
+  },
+  {
+    id: "06",
     label: "Profil",
     icon: LuUser,
     path: "/profile",
   },
   {
-    id: "06",
+    id: "07",
     label: "Logout",
     icon: LuLogOut,
     path: "logout",
@@ -61,12 +68,18 @@ export const SIDE_MENU_USER_DATA = [
   },
   {
     id: "03",
+    label: "Tanda Tangan Elektronik",
+    icon: LuFileText,
+    path: "/user/tte-status",
+  },
+  {
+    id: "04",
     label: "Profil",
     icon: LuUser,
     path: "/profile",
   },
   {
-    id: "04",
+    id: "05",
     label: "Logout",
     icon: LuLogOut,
     path: "logout",

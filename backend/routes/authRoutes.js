@@ -11,7 +11,7 @@ const {
   toggle2FA,
 } = require("../controllers/authController");
 const { protect } = require("../middleware/authMiddleware");
-const upload = require("../middleware/uploadMiddleware");
+const { upload } = require("../middleware/uploadMiddleware");
 
 const router = express.Router();
 

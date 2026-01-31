@@ -41,6 +41,17 @@ export const API_PATHS = {
     EXPORT_USERS: "/api/reports/export/users",
   },
 
+  TTE: {
+    SUBMIT_TTE: "/api/tte/submit",
+    GET_MY_TTE: "/api/tte/my-tte",
+    GET_ALL_TTE: "/api/tte/all",
+    GET_TTE_BY_ID: (tteId) => `/api/tte/${tteId}`,
+    APPROVE_TTE: (tteId) => `/api/tte/${tteId}/approve`,
+    REJECT_TTE: (tteId) => `/api/tte/${tteId}/reject`,
+    DELETE_TTE: (tteId) => `/api/tte/${tteId}`,
+    GET_TTE_STATS: "/api/tte/stats",
+  },
+
   IMAGE: {
     UPLOAD_IMAGE: "/api/auth/upload-image",
   },

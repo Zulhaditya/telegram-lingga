@@ -14,10 +14,14 @@ import Dashboard from "./pages/Admin/Dashboard";
 import ManageTelegram from "./pages/Admin/ManageTelegram";
 import CreateTelegram from "./pages/Admin/CreateTelegram";
 import ManageUsers from "./pages/Admin/ManageUsers";
+import ManageTTE from "./pages/Admin/ManageTTE";
 
 import UserDashboard from "./pages/User/UserDashboard";
 import MyTelegram from "./pages/User/MyTelegram";
 import ViewTelegramDetails from "./pages/User/ViewTelegramDetails";
+import SubmitTTE from "./pages/User/SubmitTTE";
+import MyTTEStatus from "./pages/User/MyTTEStatus";
+import TTEDetail from "./pages/User/TTEDetail";
 
 import ProfilePage from "./pages/Profile/ProfilePage";
 
@@ -46,16 +50,21 @@ const App = () => {
                 element={<CreateTelegram />}
               />
               <Route path="/admin/users" element={<ManageUsers />} />
+              <Route path="/admin/tte" element={<ManageTTE />} />
             </Route>
 
             {/* User Routes */}
-            <Route element={<PrivateRoute allowedRoles={["admin"]} />}>
+            <Route element={<PrivateRoute allowedRoles={["opd"]} />}>
+              <Route path="/user" element={<UserDashboard />} />
               <Route path="/user/dashboard" element={<UserDashboard />} />
               <Route path="/user/telegram" element={<MyTelegram />} />
               <Route
                 path="/user/telegram-details/:id"
                 element={<ViewTelegramDetails />}
               />
+              <Route path="/user/submit-tte" element={<SubmitTTE />} />
+              <Route path="/user/tte-status" element={<MyTTEStatus />} />
+              <Route path="/user/tte-detail/:id" element={<TTEDetail />} />
             </Route>
 
             {/* Profile Route - Available for all authenticated users */}

@@ -9,7 +9,7 @@ import moment from "moment";
 import InfoCard from "../../components/Cards/InfoCard";
 import { addThousandsSeparator } from "../../utils/helper";
 import TelegramListTable from "../../components/TelegramListTable";
-import { LuArrowRight } from "react-icons/lu";
+import { LuArrowRight, LuFileText } from "react-icons/lu";
 import CustomPieChart from "../../components/Charts/CustomPieChart";
 import CustomBarChart from "../../components/Charts/CustomBarChart";
 
@@ -58,7 +58,7 @@ const UserDashboard = () => {
   const getDashboardData = async () => {
     try {
       const response = await axiosInstance.get(
-        API_PATHS.TELEGRAMS.GET_USER_DASHBOARD_DATA
+        API_PATHS.TELEGRAMS.GET_USER_DASHBOARD_DATA,
       );
 
       if (response.data) {
@@ -77,7 +77,7 @@ const UserDashboard = () => {
   useEffect(() => {
     getDashboardData();
 
-    return () => { };
+    return () => {};
   }, []);
 
   return (
@@ -98,21 +98,21 @@ const UserDashboard = () => {
           <InfoCard
             label="Total Telegram"
             value={addThousandsSeparator(
-              dashboardData?.charts?.telegramDistribution?.Semua || 0
+              dashboardData?.charts?.telegramDistribution?.Semua || 0,
             )}
             color="bg-primary"
           />
           <InfoCard
             label="Dibaca"
             value={addThousandsSeparator(
-              dashboardData?.charts?.telegramDistribution?.Dibaca || 0
+              dashboardData?.charts?.telegramDistribution?.Dibaca || 0,
             )}
             color="bg-cyan-500"
           />
           <InfoCard
             label="Belum Dibaca"
             value={addThousandsSeparator(
-              dashboardData?.charts?.telegramDistribution?.BelumDibaca || 0
+              dashboardData?.charts?.telegramDistribution?.BelumDibaca || 0,
             )}
             color="bg-violet-500"
           />
@@ -137,6 +137,53 @@ const UserDashboard = () => {
             </div>
 
             <CustomBarChart data={barChartData} />
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <div className="card">
+            <div className="flex items-center justify-between mb-6">
+              <h5 className="text-lg font-semibold flex items-center gap-2">
+                <LuFileText className="text-blue-600" />
+                Tanda Tangan Elektronik
+              </h5>
+              <button
+                onClick={() => navigate("/user/tte-status")}
+                className="card-btn"
+              >
+                Lihat Status <LuArrowRight className="text-base" />
+              </button>
+            </div>
+
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-6 border border-blue-200">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">
+                    Ajukan Tanda Tangan Elektronik
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Buatlah tanda tangan elektronik resmi Anda dengan mengisi
+                    biodata, foto selfie, dan surat keterangan dari instansi.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => navigate("/user/submit-tte")}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition flex items-center gap-2"
+                >
+                  <LuFileText />
+                  Ajukan TTE
+                </button>
+                <button
+                  onClick={() => navigate("/user/tte-status")}
+                  className="bg-white hover:bg-gray-100 text-blue-600 px-6 py-2 rounded-lg font-medium transition border border-blue-300"
+                >
+                  Lihat Status
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

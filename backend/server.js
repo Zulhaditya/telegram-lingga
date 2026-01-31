@@ -8,6 +8,7 @@ const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const telegramRoutes = require("./routes/telegramRoutes");
 const reportRoutes = require("./routes/reportRoutes");
+const tteRoutes = require("./routes/tteRoutes");
 
 const app = express();
 
@@ -17,7 +18,7 @@ app.use(
     origin: process.env.CLIENT_URL || "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 // Koneksi ke Database
@@ -31,6 +32,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/telegrams", telegramRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/tte", tteRoutes);
 
 // Serve folder upload
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
