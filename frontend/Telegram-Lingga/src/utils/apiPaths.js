@@ -50,6 +50,8 @@ export const API_PATHS = {
     REJECT_TTE: (tteId) => `/api/tte/${tteId}/reject`,
     DELETE_TTE: (tteId) => `/api/tte/${tteId}`,
     GET_TTE_STATS: "/api/tte/stats",
+    EXPORT_ALL: "/api/tte/export/all",
+    EXPORT_INSTANSI: "/api/tte/export/instansi",
   },
 
   IMAGE: {

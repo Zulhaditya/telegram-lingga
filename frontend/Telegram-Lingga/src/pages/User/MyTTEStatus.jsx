@@ -35,7 +35,49 @@ const MyTTEStatus = () => {
     status: "all",
   });
 
+  const [secureMode, setSecureMode] = useState("mask");
+
+  const [sortBy, setSortBy] = useState("createdAt");
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const navigate = useNavigate();
+
+  const handleDownloadInstansiReport = async () => {
+    try {
+      const params = {};
+      if (filters.status && filters.status !== "all")
+        params.status = filters.status;
+      if (filters.search) params.search = filters.search;
+      if (sortBy) params.sortBy = sortBy;
+      if (sortOrder) params.sortOrder = sortOrder;
+      if (secureMode) params.secureMode = secureMode;
+      if (sortBy) params.sortBy = sortBy;
+      if (sortOrder) params.sortOrder = sortOrder;
+
+      const response = await axiosInstance.get(API_PATHS.TTE.EXPORT_INSTANSI, {
+        params,
+        responseType: "blob",
+      });
+
+      const blob = new Blob([response.data], {
+        type: response.headers["content-type"] || "application/octet-stream",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tte_report_instansi.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success("Laporan TTE instansi berhasil diunduh");
+    } catch (error) {
+      console.error("Error downloading instansi report:", error);
+      toast.error("Gagal mengunduh laporan TTE instansi");
+    }
+  };
 
   useEffect(() => {
     fetchMyTTE();
@@ -43,7 +85,7 @@ const MyTTEStatus = () => {
 
   useEffect(() => {
     applyFilters();
-  }, [tteList, filters]);
+  }, [tteList, filters, sortBy, sortOrder]);
 
   const fetchMyTTE = async () => {
     try {
@@ -97,7 +139,37 @@ const MyTTEStatus = () => {
       );
     }
 
-    setFilteredList(filtered);
+    // apply sorting
+    if (sortBy) {
+      const sorted = filtered.slice().sort((a, b) => {
+        const va = a[sortBy];
+        const vb = b[sortBy];
+        if (sortBy === "createdAt") {
+          const da = new Date(va || 0).getTime();
+          const db = new Date(vb || 0).getTime();
+          return sortOrder === "asc" ? da - db : db - da;
+        }
+        const sa = (va || "").toString().toLowerCase();
+        const sb = (vb || "").toString().toLowerCase();
+        if (sa < sb) return sortOrder === "asc" ? -1 : 1;
+        if (sa > sb) return sortOrder === "asc" ? 1 : -1;
+        return 0;
+      });
+      setFilteredList(sorted);
+      setCurrentPage(1);
+    } else {
+      setFilteredList(filtered);
+      setCurrentPage(1);
+    }
+  };
+
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(field);
+      setSortOrder("asc");
+    }
   };
 
   const getStatusIcon = (status) => {
@@ -124,6 +196,23 @@ const MyTTEStatus = () => {
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+
+  const getTotalPages = () =>
+    Math.max(1, Math.ceil(filteredList.length / pageSize));
+
+  const getPageNumbers = () => {
+    const total = getTotalPages();
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages = [];
+    const start = Math.max(2, currentPage - 2);
+    const end = Math.min(total - 1, currentPage + 2);
+    pages.push(1);
+    if (start > 2) pages.push("ellipsis-start");
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < total - 1) pages.push("ellipsis-end");
+    pages.push(total);
+    return pages;
   };
 
   if (loading) {
@@ -155,13 +244,29 @@ const MyTTEStatus = () => {
                 Pantau status pengajuan TTE Anda
               </p>
             </div>
-            <button
-              onClick={() => navigate("/user/submit-tte")}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition"
-            >
-              <FiPlus />
-              Ajukan TTE Baru
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate("/user/submit-tte")}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition"
+              >
+                <FiPlus />
+                Ajukan TTE Baru
+              </button>
+              <select
+                value={secureMode}
+                onChange={(e) => setSecureMode(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md bg-white text-sm"
+              >
+                <option value="mask">Mask</option>
+                <option value="real">Real</option>
+              </select>
+              <button
+                onClick={handleDownloadInstansiReport}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition"
+              >
+                Download Laporan
+              </button>
+            </div>
           </div>
 
           {/* Stats Cards */}
@@ -293,8 +398,16 @@ const MyTTEStatus = () => {
                 <table className="w-full">
                   <thead className="bg-gray-100 border-b border-gray-300">
                     <tr>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                      <th
+                        onClick={() => handleSort("namaLengkap")}
+                        className="cursor-pointer px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                      >
                         Nama Lengkap
+                        {sortBy === "namaLengkap"
+                          ? sortOrder === "asc"
+                            ? " ↑"
+                            : " ↓"
+                          : ""}
                       </th>
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                         NIK
@@ -302,8 +415,16 @@ const MyTTEStatus = () => {
                       <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                         Nomor Telepon
                       </th>
-                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                      <th
+                        onClick={() => handleSort("createdAt")}
+                        className="cursor-pointer px-6 py-4 text-left text-sm font-semibold text-gray-700"
+                      >
                         Tanggal Pengajuan
+                        {sortBy === "createdAt"
+                          ? sortOrder === "asc"
+                            ? " ↑"
+                            : " ↓"
+                          : ""}
                       </th>
                       <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">
                         Status
@@ -314,52 +435,143 @@ const MyTTEStatus = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredList.map((tte) => (
-                      <tr
-                        key={tte._id}
-                        className="border-b border-gray-200 hover:bg-gray-50 transition"
-                      >
-                        <td className="px-6 py-4 text-sm text-gray-800 font-medium">
-                          {tte.namaLengkap}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {tte.nik}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {tte.nomorTelepon}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">
-                          {moment(tte.createdAt).format("DD MMM YYYY HH:mm")}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <span
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-                              tte.status,
-                            )}`}
-                          >
-                            {getStatusIcon(tte.status)}
-                            {tte.status === "pending"
-                              ? "Menunggu"
-                              : tte.status === "approved"
-                                ? "Disetujui"
-                                : "Ditolak"}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          <button
-                            onClick={() =>
-                              navigate(`/user/tte-detail/${tte._id}`)
-                            }
-                            className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition"
-                          >
-                            <FiEye />
-                            Detail
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {(() => {
+                      const indexOfLast = currentPage * pageSize;
+                      const indexOfFirst = indexOfLast - pageSize;
+                      const displayed = filteredList.slice(
+                        indexOfFirst,
+                        indexOfLast,
+                      );
+                      return displayed.map((tte) => (
+                        <tr
+                          key={tte._id}
+                          className="border-b border-gray-200 hover:bg-gray-50 transition"
+                        >
+                          <td className="px-6 py-4 text-sm text-gray-800 font-medium">
+                            {tte.namaLengkap}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
+                            {tte.nik}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
+                            {tte.nomorTelepon}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
+                            {moment(tte.createdAt).format("DD MMM YYYY HH:mm")}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span
+                              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
+                                tte.status,
+                              )}`}
+                            >
+                              {getStatusIcon(tte.status)}
+                              {tte.status === "pending"
+                                ? "Menunggu"
+                                : tte.status === "approved"
+                                  ? "Disetujui"
+                                  : "Ditolak"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <button
+                              onClick={() =>
+                                navigate(`/user/tte-detail/${tte._id}`)
+                              }
+                              className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm font-medium transition"
+                            >
+                              <FiEye />
+                              Detail
+                            </button>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
+                <div className="flex items-center justify-between px-4 py-3 border-t">
+                  <div className="text-sm text-gray-600">
+                    Menampilkan{" "}
+                    {filteredList.length === 0
+                      ? 0
+                      : (currentPage - 1) * pageSize + 1}{" "}
+                    - {Math.min(currentPage * pageSize, filteredList.length)}{" "}
+                    dari {filteredList.length}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setCurrentPage(1)}
+                        disabled={currentPage === 1}
+                        className={`px-3 py-1 rounded-md border text-sm ${currentPage === 1 ? "bg-gray-100 text-gray-400" : "bg-white hover:bg-gray-50"}`}
+                      >
+                        Pertama
+                      </button>
+                      <button
+                        onClick={() =>
+                          setCurrentPage((p) => Math.max(1, p - 1))
+                        }
+                        disabled={currentPage === 1}
+                        className={`px-3 py-1 rounded-md border text-sm ${currentPage === 1 ? "bg-gray-100 text-gray-400" : "bg-white hover:bg-gray-50"}`}
+                      >
+                        Sebelumnya
+                      </button>
+                    </div>
+
+                    <div className="inline-flex items-center space-x-1">
+                      {getPageNumbers().map((p, idx) =>
+                        p === "ellipsis-start" || p === "ellipsis-end" ? (
+                          <span key={p + idx} className="px-2 text-gray-400">
+                            …
+                          </span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => setCurrentPage(p)}
+                            className={`px-3 py-1 rounded-md text-sm border ${currentPage === p ? "bg-blue-600 text-white border-blue-600" : "bg-white hover:bg-gray-50"}`}
+                          >
+                            {p}
+                          </button>
+                        ),
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() =>
+                          setCurrentPage((p) =>
+                            Math.min(getTotalPages(), p + 1),
+                          )
+                        }
+                        disabled={currentPage === getTotalPages()}
+                        className={`px-3 py-1 rounded-md border text-sm ${currentPage === getTotalPages() ? "bg-gray-100 text-gray-400" : "bg-white hover:bg-gray-50"}`}
+                      >
+                        Berikutnya
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage(getTotalPages())}
+                        disabled={currentPage === getTotalPages()}
+                        className={`px-3 py-1 rounded-md border text-sm ${currentPage === getTotalPages() ? "bg-gray-100 text-gray-400" : "bg-white hover:bg-gray-50"}`}
+                      >
+                        Terakhir
+                      </button>
+                    </div>
+
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="ml-3 px-2 py-1 border rounded text-sm"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             )}
           </div>

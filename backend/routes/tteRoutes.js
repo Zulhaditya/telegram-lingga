@@ -9,6 +9,8 @@ const {
   rejectTTE,
   deleteTTE,
   getTTEStats,
+  exportAllTTE,
+  exportInstansiTTE,
 } = require("../controllers/tteController");
 const { protect } = require("../middleware/authMiddleware");
 const {
@@ -54,6 +56,9 @@ router.get("/my-tte", protect, getMyTTE);
 // Admin routes
 router.get("/stats", protect, adminOnly, getTTEStats);
 router.get("/all", protect, adminOnly, getAllTTE);
+router.get("/export/all", protect, adminOnly, exportAllTTE);
+// Export for instansi (logged-in user's instansi)
+router.get("/export/instansi", protect, exportInstansiTTE);
 router.get("/:id", protect, getTTEById);
 
 router.put(

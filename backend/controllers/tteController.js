@@ -2,6 +2,23 @@ const TTE = require("../models/TTE");
 const User = require("../models/User");
 const fs = require("fs");
 const path = require("path");
+const ExcelJS = require("exceljs");
+const crypto = require("crypto");
+
+const EXPORT_SECRET =
+  process.env.EXPORT_SECRET || "default_export_secret_change_this_please";
+const EXPORT_KEY = crypto.createHash("sha256").update(EXPORT_SECRET).digest();
+
+function encryptText(text) {
+  if (!text) return "";
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv("aes-256-cbc", EXPORT_KEY, iv);
+  const encrypted = Buffer.concat([
+    cipher.update(String(text), "utf8"),
+    cipher.final(),
+  ]);
+  return iv.toString("hex") + ":" + encrypted.toString("hex");
+}
 
 // @desc    Submit pengajuan TTE baru
 // @route   POST /api/tte/submit
@@ -161,10 +178,18 @@ const getAllTTE = async (req, res) => {
       ];
     }
 
+    // apply sorting from query
+    const { sortBy, sortOrder, secureMode } = req.query;
+    let sortObj = { createdAt: -1 };
+    if (sortBy) {
+      sortObj = {};
+      sortObj[sortBy] = sortOrder === "asc" ? 1 : -1;
+    }
+
     const tteList = await TTE.find(filter)
       .populate("userId", "nama email profileImageUrl")
       .populate("approvedBy", "nama email")
-      .sort({ createdAt: -1 });
+      .sort(sortObj);
 
     res.status(200).json({ count: tteList.length, tte: tteList });
   } catch (error) {
@@ -379,4 +404,202 @@ module.exports = {
   rejectTTE,
   deleteTTE,
   getTTEStats,
+  exportAllTTE,
+  exportInstansiTTE,
 };
+
+// @desc    Export all TTE to Excel (admin)
+// @route   GET /api/tte/export/all
+// @access  Private (Admin)
+async function exportAllTTE(req, res) {
+  try {
+    const { status, search } = req.query;
+    let filter = {};
+
+    if (status) filter.status = status;
+
+    if (search) {
+      filter.$or = [
+        { namaLengkap: { $regex: search, $options: "i" } },
+        { nik: { $regex: search, $options: "i" } },
+        { nomorTelepon: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // apply sorting from query
+    const { sortBy, sortOrder, secureMode } = req.query;
+    let sortObj = { createdAt: -1 };
+    if (sortBy) {
+      sortObj = {};
+      sortObj[sortBy] = sortOrder === "asc" ? 1 : -1;
+    }
+
+    const tteList = await TTE.find(filter)
+      .populate("userId", "nama email profileImageUrl")
+      .populate("approvedBy", "nama email")
+      .sort(sortObj);
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("TTE Report");
+
+    worksheet.columns = [
+      { header: "Nama Lengkap", key: "namaLengkap", width: 30 },
+      { header: "NIK", key: "nik", width: 20 },
+      { header: "Nomor Telepon", key: "nomorTelepon", width: 20 },
+      { header: "Jabatan", key: "namaJabatan", width: 25 },
+      { header: "Pangkat/Golongan", key: "pangkatGolongan", width: 20 },
+      { header: "Asal Instansi", key: "asalInstansi", width: 30 },
+      { header: "Email TTE", key: "tteEmail", width: 30 },
+      { header: "Password TTE", key: "ttePassword", width: 30 },
+      { header: "Passphrase TTE", key: "ttePassphrase", width: 30 },
+      { header: "Status", key: "status", width: 15 },
+      { header: "Tanggal Pengajuan", key: "createdAt", width: 22 },
+      { header: "Disetujui Oleh", key: "approvedBy", width: 25 },
+      { header: "Tanggal Disetujui", key: "approvedAt", width: 22 },
+    ];
+
+    tteList.forEach((t) => {
+      // handle secure mode: mask (default) or real
+      const mode = (secureMode || "mask").toLowerCase();
+      let outPassword = "";
+      let outPassphrase = "";
+      if (mode === "real") {
+        outPassword = t.ttePassword || "";
+        outPassphrase = t.ttePassphrase || "";
+      } else {
+        // mask
+        outPassword = t.ttePassword ? "******" : "";
+        outPassphrase = t.ttePassphrase ? "******" : "";
+      }
+
+      worksheet.addRow({
+        namaLengkap: t.namaLengkap,
+        nik: t.nik,
+        nomorTelepon: t.nomorTelepon,
+        namaJabatan: t.namaJabatan,
+        pangkatGolongan: t.pangkatGolongan,
+        asalInstansi: t.asalInstansi,
+        tteEmail: t.tteEmail || "",
+        ttePassword: outPassword,
+        ttePassphrase: outPassphrase,
+        status: t.status,
+        createdAt: t.createdAt ? t.createdAt.toISOString() : "",
+        approvedBy: t.approvedBy ? t.approvedBy.nama : "",
+        approvedAt: t.approvedAt ? t.approvedAt.toISOString() : "",
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=tte_report_all_${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`,
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Error exporting TTE all:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+}
+
+// @desc    Export TTE for the logged-in user's instansi to Excel
+// @route   GET /api/tte/export/instansi
+// @access  Private (User/Instansi)
+async function exportInstansiTTE(req, res) {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: "User tidak ditemukan" });
+
+    const { status, search } = req.query;
+    let filter = { asalInstansi: user.nama };
+
+    if (status) filter.status = status;
+
+    if (search) {
+      filter.$or = [
+        { namaLengkap: { $regex: search, $options: "i" } },
+        { nik: { $regex: search, $options: "i" } },
+        { nomorTelepon: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    const tteList = await TTE.find(filter)
+      .populate("userId", "nama email profileImageUrl")
+      .populate("approvedBy", "nama email")
+      .sort({ createdAt: -1 });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("TTE Report Instansi");
+
+    worksheet.columns = [
+      { header: "Nama Lengkap", key: "namaLengkap", width: 30 },
+      { header: "NIK", key: "nik", width: 20 },
+      { header: "Nomor Telepon", key: "nomorTelepon", width: 20 },
+      { header: "Jabatan", key: "namaJabatan", width: 25 },
+      { header: "Pangkat/Golongan", key: "pangkatGolongan", width: 20 },
+      { header: "Asal Instansi", key: "asalInstansi", width: 30 },
+      { header: "Email TTE", key: "tteEmail", width: 30 },
+      { header: "Password TTE", key: "ttePassword", width: 30 },
+      { header: "Passphrase TTE", key: "ttePassphrase", width: 30 },
+      { header: "Status", key: "status", width: 15 },
+      { header: "Tanggal Pengajuan", key: "createdAt", width: 22 },
+      { header: "Disetujui Oleh", key: "approvedBy", width: 25 },
+      { header: "Tanggal Disetujui", key: "approvedAt", width: 22 },
+    ];
+
+    tteList.forEach((t) => {
+      // handle secure mode: mask (default) or real
+      const mode = (secureMode || "mask").toLowerCase();
+      let outPassword = "";
+      let outPassphrase = "";
+      if (mode === "real") {
+        outPassword = t.ttePassword || "";
+        outPassphrase = t.ttePassphrase || "";
+      } else {
+        // mask
+        outPassword = t.ttePassword ? "******" : "";
+        outPassphrase = t.ttePassphrase ? "******" : "";
+      }
+
+      worksheet.addRow({
+        namaLengkap: t.namaLengkap,
+        nik: t.nik,
+        nomorTelepon: t.nomorTelepon,
+        namaJabatan: t.namaJabatan,
+        pangkatGolongan: t.pangkatGolongan,
+        asalInstansi: t.asalInstansi,
+        tteEmail: t.tteEmail || "",
+        ttePassword: outPassword,
+        ttePassphrase: outPassphrase,
+        status: t.status,
+        createdAt: t.createdAt ? t.createdAt.toISOString() : "",
+        approvedBy: t.approvedBy ? t.approvedBy.nama : "",
+        approvedAt: t.approvedAt ? t.approvedAt.toISOString() : "",
+      });
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=tte_report_instansi_${user.nama.replace(/\s+/g, "_")}_${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`,
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Error exporting TTE instansi:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+}
